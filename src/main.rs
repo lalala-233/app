@@ -1,8 +1,9 @@
 use eframe::egui;
 use font_kit::source::SystemSource;
 use serde::{Deserialize, Serialize};
-use std::process::Command;
+use std::sync::atomic::Ordering::Relaxed;
 use std::sync::{Arc, Mutex};
+use std::{process::Command, sync::atomic::AtomicBool};
 
 mod config;
 mod pages;
@@ -58,7 +59,7 @@ struct MyApp {
     convert_page: ConvertPage,
 
     #[serde(skip)]
-    is_generating: bool,
+    is_generating: Arc<AtomicBool>,
     #[serde(skip)]
     generation_progress: f32,
     #[serde(skip)]
@@ -68,6 +69,10 @@ struct MyApp {
 }
 
 impl MyApp {
+    fn is_generating(&self) -> bool {
+        self.is_generating.load(Relaxed)
+    }
+
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // 从持久化存储加载应用状态
         if let Some(storage) = cc.storage {
@@ -152,11 +157,11 @@ impl eframe::App for MyApp {
 
             ui.separator();
 
-            if ui.button("生成").clicked() && !self.is_generating {
-                self.generate_image(ctx);
+            if ui.button("生成").clicked() && !self.is_generating() {
+                self.generate_image();
             }
 
-            if self.is_generating {
+            if self.is_generating() {
                 ui.label("生成中...");
                 ui.spinner();
             }
@@ -177,12 +182,11 @@ impl eframe::App for MyApp {
 }
 
 impl MyApp {
-    fn generate_image(&mut self, ctx: &egui::Context) {
-        self.is_generating = true;
+    fn generate_image(&mut self) {
         self.generation_progress = 0.0;
+        let lock = Arc::clone(&self.is_generating);
 
         let app = self.clone();
-        let ctx = ctx.clone();
         let last_result = self.last_result.clone();
         let last_error = self.last_error.clone();
 
@@ -235,11 +239,10 @@ impl MyApp {
                 }
                 _ => unreachable!(),
             }
-
+            let binding = Arc::clone(&lock);
+            binding.store(true, Relaxed);
             let output = command.arg("--output").arg(&app.config.output_dir).output();
-
-            ctx.request_repaint();
-
+            binding.store(false, Relaxed);
             match output {
                 Ok(output) => {
                     if output.status.success() {
@@ -254,8 +257,7 @@ impl MyApp {
                     let mut error = last_error.lock().unwrap();
                     *error = e.to_string();
                 }
-            }
+            };
         });
-        self.is_generating = false;
     }
 }
