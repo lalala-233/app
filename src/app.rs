@@ -146,6 +146,7 @@ impl App for MyApp {
                     ui.text_edit_singleline(&mut self.config.model_path);
                     if ui.button("选择...").clicked() {
                         if let Some(path) = rfd::FileDialog::new()
+                            .set_directory("./")
                             .add_filter("模型文件", &["ckpt", "safetensors"])
                             .pick_file()
                         {
@@ -160,6 +161,7 @@ impl App for MyApp {
                     self.config.vae_path = Some(vae_path);
                     if ui.button("选择...").clicked() {
                         if let Some(path) = rfd::FileDialog::new()
+                            .set_directory("./")
                             .add_filter("VAE文件", &["pt", "ckpt"])
                             .pick_file()
                         {
@@ -169,9 +171,15 @@ impl App for MyApp {
                 });
                 ui.horizontal(|ui| {
                     ui.label("输出路径:");
-                    let mut path_str = self.config.output_dir.clone();
-                    ui.text_edit_singleline(&mut path_str);
-                    self.config.output_dir = path_str;
+                    let mut output_path_str = self.config.output_dir.clone();
+                    ui.text_edit_singleline(&mut output_path_str);
+                    self.config.output_dir = output_path_str;
+                    if ui.button("选择...").clicked() {
+                        if let Some(path) = rfd::FileDialog::new().set_directory("./").pick_folder()
+                        {
+                            self.config.output_dir = path.to_string_lossy().to_string()
+                        }
+                    }
                 });
                 ui.horizontal(|ui| {
                     ui.label("种子:");
@@ -193,6 +201,38 @@ impl App for MyApp {
                         egui::DragValue::new(&mut self.config.sampling.cfg_scale).range(1.0..=30.0),
                     );
                 });
+
+                // 新增配置项
+                ui.horizontal(|ui| {
+                    ui.label("线程数:");
+                    ui.add(egui::DragValue::new(&mut self.config.threads).range(-1..=64));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("采样方法:");
+                    ui.text_edit_singleline(&mut self.config.sampling_method);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("RNG 类型:");
+                    ui.text_edit_singleline(&mut self.config.rng_type);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("批次数量:");
+                    ui.add(egui::DragValue::new(&mut self.config.batch_count).range(1..=64));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("调度器类型:");
+                    ui.text_edit_singleline(&mut self.config.schedule_type);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("CLIP skip:");
+                    ui.add(egui::DragValue::new(&mut self.config.clip_skip).range(-1..=12));
+                });
+                ui.checkbox(&mut self.config.vae_tiling, "VAE 分块处理");
+                ui.checkbox(&mut self.config.vae_on_cpu, "VAE 在 CPU");
+                ui.checkbox(&mut self.config.clip_on_cpu, "CLIP 在 CPU");
+                ui.checkbox(&mut self.config.diffusion_fa, "扩散模型 flash attention");
+                ui.checkbox(&mut self.config.control_net_on_cpu, "ControlNet 在 CPU");
+                ui.checkbox(&mut self.config.canny_preprocess, "Canny 预处理");
             });
 
             match self.current_page {

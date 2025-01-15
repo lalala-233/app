@@ -12,6 +12,29 @@ pub struct Config {
     pub sampling: SamplingConfig,
     /// 页面配置
     pub pages: PagesConfig,
+    
+    // 新增配置项
+    pub threads: i32,
+    pub diffusion_model_path: Option<String>,
+    pub clip_l_path: Option<String>,
+    pub clip_g_path: Option<String>,
+    pub t5xxl_path: Option<String>,
+    pub taesd_path: Option<String>,
+    pub control_net_path: Option<String>,
+    pub embedding_dir: Option<String>,
+    pub upscale_model_path: Option<String>,
+    pub lora_model_dir: Option<String>,
+    pub sampling_method: String,
+    pub rng_type: String,
+    pub batch_count: u32,
+    pub schedule_type: String,
+    pub clip_skip: i32,
+    pub vae_tiling: bool,
+    pub vae_on_cpu: bool,
+    pub clip_on_cpu: bool,
+    pub diffusion_fa: bool,
+    pub control_net_on_cpu: bool,
+    pub canny_preprocess: bool,
 }
 
 /// 采样参数配置
@@ -21,7 +44,7 @@ pub struct SamplingConfig {
     pub cfg_scale: f32,
     pub width: u32,
     pub height: u32,
-    pub seed: u64,
+    pub seed: i64,
 }
 
 /// 页面配置
@@ -61,7 +84,7 @@ impl Default for Config {
                 cfg_scale: 7.0,
                 width: 512,
                 height: 512,
-                seed: 42,
+                seed: -1,
             },
             pages: PagesConfig {
                 txt2img: Txt2ImgConfig {
@@ -75,6 +98,28 @@ impl Default for Config {
                     default_output_format: "png".to_string(),
                 },
             },
+            // 新增字段默认值
+            threads: -1,
+            diffusion_model_path: None,
+            clip_l_path: None,
+            clip_g_path: None,
+            t5xxl_path: None,
+            taesd_path: None,
+            control_net_path: None,
+            embedding_dir: None,
+            upscale_model_path: None,
+            lora_model_dir: None,
+            sampling_method: "euler_a".to_string(),
+            rng_type: "cuda".to_string(),
+            batch_count: 1,
+            schedule_type: "discrete".to_string(),
+            clip_skip: -1,
+            vae_tiling: false,
+            vae_on_cpu: false,
+            clip_on_cpu: false,
+            diffusion_fa: false,
+            control_net_on_cpu: false,
+            canny_preprocess: false,
         }
     }
 }

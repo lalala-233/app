@@ -23,7 +23,7 @@ impl CommandBuilder {
         self
     }
 
-    pub fn seed(mut self, seed: u64) -> Self {
+    pub fn seed(mut self, seed: i64) -> Self {
         self.command.arg("--seed").arg(seed.to_string());
         self
     }
