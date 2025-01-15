@@ -1,9 +1,12 @@
-use eframe::egui;
+use eframe::{
+    egui::{self, Context},
+    App,
+};
 use font_kit::source::SystemSource;
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::Ordering::Relaxed;
 use std::sync::{Arc, Mutex};
 use std::{process::Command, sync::atomic::AtomicBool};
+use std::{sync::atomic::Ordering::Relaxed, thread::sleep, time::Duration};
 
 mod config;
 mod pages;
@@ -11,6 +14,24 @@ mod utils;
 
 use config::Config;
 use pages::{convert::ConvertPage, img2img::Img2ImgPage, txt2img::Txt2ImgPage};
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Default)]
+enum PageType {
+    #[default]
+    TextToImage,
+    ImageToImage,
+    Convert,
+}
+
+impl PageType {
+    fn to_string(self) -> &'static str {
+        match self {
+            PageType::TextToImage => "txt2img",
+            PageType::ImageToImage => "img2img",
+            PageType::Convert => "convert",
+        }
+    }
+}
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
@@ -21,36 +42,12 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "Stable Diffusion GUI",
         options,
-        Box::new(|cc| {
-            let system_source = SystemSource::new();
-            if let Ok(family) = system_source.select_family_by_name("sans-serif") {
-                if let Some(handle) = family.fonts().first().cloned() {
-                    if let Ok(font) = handle.load() {
-                        let mut fonts = egui::FontDefinitions::default();
-                        fonts.font_data.insert(
-                            "system_font".to_owned(),
-                            egui::FontData::from_owned(font.copy_font_data().unwrap().to_vec())
-                                .into(),
-                        );
-                        fonts
-                            .families
-                            .get_mut(&egui::FontFamily::Proportional)
-                            .unwrap()
-                            .insert(0, "system_font".to_owned());
-                        cc.egui_ctx.set_fonts(fonts);
-                    }
-                }
-            }
-
-            Ok(Box::new(MyApp::new(cc)))
-        }),
+        Box::new(|cc| Ok(Box::new(MyApp::new(cc)))),
     )
 }
-
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 struct MyApp {
-    #[serde(skip)]
-    current_page: usize,
+    current_page: PageType,
     config: Config,
 
     // 页面实例
@@ -73,22 +70,188 @@ impl MyApp {
         self.is_generating.load(Relaxed)
     }
 
-    fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    fn set_fonts(ctx: &Context) {
+        let system_source = SystemSource::new();
+        if let Ok(family) = system_source.select_family_by_name("sans-serif") {
+            if let Some(handle) = family.fonts().first().cloned() {
+                if let Ok(font) = handle.load() {
+                    let mut fonts = egui::FontDefinitions::default();
+                    fonts.font_data.insert(
+                        "system_font".to_owned(),
+                        egui::FontData::from_owned(font.copy_font_data().unwrap().to_vec()).into(),
+                    );
+                    fonts
+                        .families
+                        .get_mut(&egui::FontFamily::Proportional)
+                        .unwrap()
+                        .insert(0, "system_font".to_owned());
+                    ctx.set_fonts(fonts);
+                }
+            }
+        }
+    }
+    fn new(cc: &eframe::CreationContext) -> Self {
+        Self::set_fonts(&cc.egui_ctx);
         // 从持久化存储加载应用状态
         if let Some(storage) = cc.storage {
             return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
         }
         Self::default()
     }
+    fn generate_image(&mut self) {
+        self.generation_progress = 0.0;
+        let lock = Arc::clone(&self.is_generating);
+
+        let app = self.clone();
+        let last_result = self.last_result.clone();
+        let last_error = self.last_error.clone();
+
+        std::thread::spawn(move || {
+            let binding = Arc::clone(&lock);
+            binding.store(true, Relaxed);
+            let command_builder = CommandBuilder::new("./sd")
+                .model(&app.config.model_path)
+                .vae(app.config.vae_path.as_ref().unwrap_or(&String::new()))
+                .seed(app.config.sampling.seed)
+                .width(app.config.sampling.width)
+                .height(app.config.sampling.height)
+                .steps(app.config.sampling.steps)
+                .cfg_scale(app.config.sampling.cfg_scale);
+
+            let command_builder = match app.current_page {
+                PageType::TextToImage => command_builder
+                    .mode(PageType::TextToImage)
+                    .prompt(&app.txt2img_page.prompt)
+                    .negative_prompt(&app.txt2img_page.negative_prompt)
+                    .output(&app.config.output_dir),
+                PageType::ImageToImage => command_builder
+                    .mode(PageType::ImageToImage)
+                    .init_img(&app.img2img_page.init_img_path)
+                    .strength(app.img2img_page.strength)
+                    .output(&app.config.output_dir),
+                PageType::Convert => command_builder
+                    .mode(PageType::Convert)
+                    .input_img(&app.convert_page.input_img_path)
+                    .output(&app.convert_page.convert_output_path),
+            };
+
+            let output = command_builder.build().output();
+            binding.store(false, Relaxed);
+            match output {
+                Ok(output) => {
+                    if output.status.success() {
+                        let mut result = last_result.lock().unwrap();
+                        *result = "图片生成成功！".to_string();
+                    } else {
+                        let mut error = last_error.lock().unwrap();
+                        *error = String::from_utf8_lossy(&output.stderr).to_string();
+                    }
+                }
+                Err(e) => {
+                    let mut error = last_error.lock().unwrap();
+                    *error = e.to_string();
+                }
+            };
+            sleep(Duration::from_secs(5));
+            last_result.lock().unwrap().clear();
+            last_error.lock().unwrap().clear();
+        });
+    }
 }
 
-impl eframe::App for MyApp {
+struct CommandBuilder {
+    command: Command,
+}
+
+impl CommandBuilder {
+    fn new(program: &str) -> Self {
+        Self {
+            command: Command::new(program),
+        }
+    }
+
+    fn model(mut self, model_path: &str) -> Self {
+        self.command.arg("--model").arg(model_path);
+        self
+    }
+
+    fn vae(mut self, vae_path: &str) -> Self {
+        self.command.arg("--vae").arg(vae_path);
+        self
+    }
+
+    fn seed(mut self, seed: u64) -> Self {
+        self.command.arg("--seed").arg(seed.to_string());
+        self
+    }
+
+    fn width(mut self, width: u32) -> Self {
+        self.command.arg("--width").arg(width.to_string());
+        self
+    }
+
+    fn height(mut self, height: u32) -> Self {
+        self.command.arg("--height").arg(height.to_string());
+        self
+    }
+
+    fn steps(mut self, steps: u32) -> Self {
+        self.command.arg("--steps").arg(steps.to_string());
+        self
+    }
+
+    fn cfg_scale(mut self, cfg_scale: f32) -> Self {
+        self.command.arg("--cfg-scale").arg(cfg_scale.to_string());
+        self
+    }
+
+    fn mode(mut self, mode: PageType) -> Self {
+        self.command.arg("--mode").arg(mode.to_string());
+        self
+    }
+
+    fn prompt(mut self, prompt: &str) -> Self {
+        self.command.arg("--prompt").arg(prompt);
+        self
+    }
+
+    fn negative_prompt(mut self, negative_prompt: &str) -> Self {
+        self.command.arg("--negative-prompt").arg(negative_prompt);
+        self
+    }
+
+    fn init_img(mut self, init_img_path: &str) -> Self {
+        self.command.arg("--init-img").arg(init_img_path);
+        self
+    }
+
+    fn strength(mut self, strength: f32) -> Self {
+        self.command.arg("--strength").arg(strength.to_string());
+        self
+    }
+
+    fn input_img(mut self, input_img_path: &str) -> Self {
+        self.command.arg("--input-img").arg(input_img_path);
+        self
+    }
+
+    fn output(mut self, output_path: &str) -> Self {
+        self.command.arg("--output").arg(output_path);
+        self
+    }
+
+    fn build(self) -> Command {
+        self.command
+    }
+}
+
+impl App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.selectable_value(&mut self.current_page, 0, "文生图");
-                ui.selectable_value(&mut self.current_page, 1, "图生图");
-                ui.selectable_value(&mut self.current_page, 2, "格式转换");
+                ui.selectable_value(&mut self.current_page, PageType::TextToImage, "文生图");
+                ui.selectable_value(&mut self.current_page, PageType::ImageToImage, "图生图");
+                ui.selectable_value(&mut self.current_page, PageType::Convert, "格式转换");
             });
 
             ui.separator();
@@ -149,10 +312,9 @@ impl eframe::App for MyApp {
             });
 
             match self.current_page {
-                0 => self.txt2img_page.show(ui),
-                1 => self.img2img_page.show(ui),
-                2 => self.convert_page.show(ui),
-                _ => unreachable!(),
+                PageType::TextToImage => self.txt2img_page.show(ui),
+                PageType::ImageToImage => self.img2img_page.show(ui),
+                PageType::Convert => self.convert_page.show(ui),
             }
 
             ui.separator();
@@ -179,85 +341,8 @@ impl eframe::App for MyApp {
             }
         });
     }
-}
 
-impl MyApp {
-    fn generate_image(&mut self) {
-        self.generation_progress = 0.0;
-        let lock = Arc::clone(&self.is_generating);
-
-        let app = self.clone();
-        let last_result = self.last_result.clone();
-        let last_error = self.last_error.clone();
-
-        std::thread::spawn(move || {
-            let mut command = Command::new("./sd");
-
-            command
-                .arg("--model")
-                .arg(&app.config.model_path)
-                .arg("--vae")
-                .arg(app.config.vae_path.as_ref().unwrap_or(&String::new()))
-                .arg("--seed")
-                .arg(app.config.sampling.seed.to_string())
-                .arg("--width")
-                .arg(app.config.sampling.width.to_string())
-                .arg("--height")
-                .arg(app.config.sampling.height.to_string())
-                .arg("--steps")
-                .arg(app.config.sampling.steps.to_string())
-                .arg("--cfg-scale")
-                .arg(app.config.sampling.cfg_scale.to_string());
-
-            match app.current_page {
-                0 => {
-                    command
-                        .arg("--mode")
-                        .arg("txt2img")
-                        .arg("--prompt")
-                        .arg(&app.txt2img_page.prompt)
-                        .arg("--negative-prompt")
-                        .arg(&app.txt2img_page.negative_prompt);
-                }
-                1 => {
-                    command
-                        .arg("--mode")
-                        .arg("img2img")
-                        .arg("--init-img")
-                        .arg(&app.img2img_page.init_img_path)
-                        .arg("--strength")
-                        .arg(app.img2img_page.strength.to_string());
-                }
-                2 => {
-                    command
-                        .arg("--mode")
-                        .arg("convert")
-                        .arg("--input-img")
-                        .arg(&app.convert_page.input_img_path)
-                        .arg("--output")
-                        .arg(&app.convert_page.convert_output_path);
-                }
-                _ => unreachable!(),
-            }
-            let binding = Arc::clone(&lock);
-            binding.store(true, Relaxed);
-            let output = command.arg("--output").arg(&app.config.output_dir).output();
-            binding.store(false, Relaxed);
-            match output {
-                Ok(output) => {
-                    if output.status.success() {
-                        let mut result = last_result.lock().unwrap();
-                        *result = "图片生成成功！".to_string();
-                    } else {
-                        let mut error = last_error.lock().unwrap();
-                        *error = String::from_utf8_lossy(&output.stderr).to_string();
-                    }
-                }
-                Err(e) => {
-                    let mut error = last_error.lock().unwrap();
-                    *error = e.to_string();
-                }
-            };
-        });
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        eframe::set_value(storage, eframe::APP_KEY, self);
     }
 }
