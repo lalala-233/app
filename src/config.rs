@@ -3,19 +3,18 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
     /// 模型文件路径
-    pub model_path: String,
+    pub diffusion_model_path: String,
     /// VAE文件路径
-    pub vae_path: Option<String>,
+    pub vae_path: String,
     /// 输出目录
     pub output_dir: String,
     /// 默认采样参数
     pub sampling: SamplingConfig,
     /// 页面配置
     pub pages: PagesConfig,
-    
+
     // 新增配置项
     pub threads: i32,
-    pub diffusion_model_path: Option<String>,
     pub clip_l_path: Option<String>,
     pub clip_g_path: Option<String>,
     pub t5xxl_path: Option<String>,
@@ -76,8 +75,8 @@ pub struct ConvertConfig {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            model_path: "model.safetensors".to_string(),
-            vae_path: None,
+            diffusion_model_path: "model.safetensors".to_string(),
+            vae_path: String::new(),
             output_dir: "output".to_string(),
             sampling: SamplingConfig {
                 steps: 20,
@@ -100,7 +99,6 @@ impl Default for Config {
             },
             // 新增字段默认值
             threads: -1,
-            diffusion_model_path: None,
             clip_l_path: None,
             clip_g_path: None,
             t5xxl_path: None,

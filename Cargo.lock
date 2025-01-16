@@ -171,17 +171,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "app"
-version = "0.1.5"
-dependencies = [
- "eframe",
- "font-kit",
- "log",
- "rfd",
- "serde",
-]
-
-[[package]]
 name = "arboard"
 version = "3.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2595,6 +2584,17 @@ dependencies = [
  "memmap2",
  "smithay-client-toolkit",
  "tiny-skia",
+]
+
+[[package]]
+name = "sdcpp_gui"
+version = "0.1.6"
+dependencies = [
+ "eframe",
+ "font-kit",
+ "log",
+ "rfd",
+ "serde",
 ]
 
 [[package]]

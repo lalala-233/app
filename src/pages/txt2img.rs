@@ -10,11 +10,11 @@ impl Txt2ImgPage {
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.heading("文生图");
         ui.horizontal(|ui| {
-            ui.label("提示词:");
+            ui.label("提示词：");
             ui.text_edit_multiline(&mut self.prompt);
         });
         ui.horizontal(|ui| {
-            ui.label("负面提示词:");
+            ui.label("负面提示词：");
             ui.text_edit_multiline(&mut self.negative_prompt);
         });
     }

@@ -1,11 +1,11 @@
 [package]
-name = "app"
-version = "0.1.5"
+name = "sdcpp_gui"
+version = "0.1.6"
 edition = "2021"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 font-kit = { version = "0.14", features = ["source"] }
-eframe={version = "0.30", features = ["persistence"]}
+eframe = { version = "0.30", features = ["persistence"] }
 log = "0.4"
 rfd = "0.15"

@@ -1,4 +1,4 @@
-use app::MyApp;
+use sdcpp_gui::MyApp;
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {

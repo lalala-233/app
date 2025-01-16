@@ -3,17 +3,21 @@ use eframe::{
     App,
 };
 use font_kit::source::SystemSource;
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering::Relaxed},
         Arc, Mutex,
     },
-    thread::sleep,
+    thread::{self, sleep},
     time::Duration,
 };
 
-use crate::{CommandBuilder, Config, ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
+use crate::{
+    ui::{dir_select_config, file_select_config},
+    CommandBuilder, Config, ConvertPage, Img2ImgPage, PageType, Txt2ImgPage,
+};
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct MyApp {
@@ -24,7 +28,6 @@ pub struct MyApp {
     txt2img_page: Txt2ImgPage,
     img2img_page: Img2ImgPage,
     convert_page: ConvertPage,
-
     #[serde(skip)]
     is_generating: Arc<AtomicBool>,
     #[serde(skip)]
@@ -70,43 +73,40 @@ impl MyApp {
     }
     fn generate_image(&mut self) {
         self.generation_progress = 0.0;
-        let lock = Arc::clone(&self.is_generating);
+        let command_builder = CommandBuilder::new("./sd")
+            .model(&self.config.diffusion_model_path)
+            .vae(&self.config.vae_path)
+            .seed(self.config.sampling.seed)
+            .width(self.config.sampling.width)
+            .height(self.config.sampling.height)
+            .steps(self.config.sampling.steps)
+            .cfg_scale(self.config.sampling.cfg_scale);
 
-        let app = self.clone();
+        let command_builder = match self.current_page {
+            PageType::TextToImage => command_builder
+                .mode(PageType::TextToImage)
+                .prompt(&self.txt2img_page.prompt)
+                .negative_prompt(&self.txt2img_page.negative_prompt)
+                .output(&self.config.output_dir),
+            PageType::ImageToImage => command_builder
+                .mode(PageType::ImageToImage)
+                .init_img(&self.img2img_page.init_img_path)
+                .strength(self.img2img_page.strength)
+                .output(&self.config.output_dir),
+            PageType::Convert => command_builder
+                .mode(PageType::Convert)
+                .input_img(&self.convert_page.input_img_path)
+                .output(&self.convert_page.convert_output_path),
+        };
+        let is_generating = Arc::clone(&self.is_generating);
+        is_generating.store(true, Relaxed);
         let last_result = self.last_result.clone();
         let last_error = self.last_error.clone();
-
-        std::thread::spawn(move || {
-            let binding = Arc::clone(&lock);
-            binding.store(true, Relaxed);
-            let command_builder = CommandBuilder::new("./sd")
-                .model(&app.config.model_path)
-                .vae(app.config.vae_path.as_ref().unwrap_or(&String::new()))
-                .seed(app.config.sampling.seed)
-                .width(app.config.sampling.width)
-                .height(app.config.sampling.height)
-                .steps(app.config.sampling.steps)
-                .cfg_scale(app.config.sampling.cfg_scale);
-
-            let command_builder = match app.current_page {
-                PageType::TextToImage => command_builder
-                    .mode(PageType::TextToImage)
-                    .prompt(&app.txt2img_page.prompt)
-                    .negative_prompt(&app.txt2img_page.negative_prompt)
-                    .output(&app.config.output_dir),
-                PageType::ImageToImage => command_builder
-                    .mode(PageType::ImageToImage)
-                    .init_img(&app.img2img_page.init_img_path)
-                    .strength(app.img2img_page.strength)
-                    .output(&app.config.output_dir),
-                PageType::Convert => command_builder
-                    .mode(PageType::Convert)
-                    .input_img(&app.convert_page.input_img_path)
-                    .output(&app.convert_page.convert_output_path),
-            };
-
-            let output = command_builder.build().output();
-            binding.store(false, Relaxed);
+        let mut command = command_builder.build();
+        info!("Args: {:?}", command.get_args());
+        thread::spawn(move || {
+            let output = command.output();
+            is_generating.store(false, Relaxed);
             match output {
                 Ok(output) => {
                     if output.status.success() {
@@ -141,90 +141,65 @@ impl App for MyApp {
             ui.separator();
 
             ui.collapsing("通用", |ui| {
+                file_select_config(
+                    ui,
+                    ("模型路径：", &mut self.config.diffusion_model_path),
+                    ("模型文件", &["ckpt", "safetensors"]),
+                );
+                file_select_config(
+                    ui,
+                    ("VAE路径：", &mut self.config.vae_path),
+                    ("VAE文件", &["pt", "ckpt"]),
+                );
+                dir_select_config(ui, ("输出路径：", &mut self.config.output_dir));
+
                 ui.horizontal(|ui| {
-                    ui.label("模型路径:");
-                    ui.text_edit_singleline(&mut self.config.model_path);
-                    if ui.button("选择...").clicked() {
-                        if let Some(path) = rfd::FileDialog::new()
-                            .set_directory("./")
-                            .add_filter("模型文件", &["ckpt", "safetensors"])
-                            .pick_file()
-                        {
-                            self.config.model_path = path.to_string_lossy().to_string();
-                        }
-                    }
-                });
-                ui.horizontal(|ui| {
-                    ui.label("VAE路径:");
-                    let mut vae_path = self.config.vae_path.clone().unwrap_or_default();
-                    ui.text_edit_singleline(&mut vae_path);
-                    self.config.vae_path = Some(vae_path);
-                    if ui.button("选择...").clicked() {
-                        if let Some(path) = rfd::FileDialog::new()
-                            .set_directory("./")
-                            .add_filter("VAE文件", &["pt", "ckpt"])
-                            .pick_file()
-                        {
-                            self.config.vae_path = Some(path.to_string_lossy().to_string());
-                        }
-                    }
-                });
-                ui.horizontal(|ui| {
-                    ui.label("输出路径:");
-                    let mut output_path_str = self.config.output_dir.clone();
-                    ui.text_edit_singleline(&mut output_path_str);
-                    self.config.output_dir = output_path_str;
-                    if ui.button("选择...").clicked() {
-                        if let Some(path) = rfd::FileDialog::new().set_directory("./").pick_folder()
-                        {
-                            self.config.output_dir = path.to_string_lossy().to_string()
-                        }
-                    }
-                });
-                ui.horizontal(|ui| {
-                    ui.label("种子:");
+                    ui.label("种子：");
                     ui.add(egui::DragValue::new(&mut self.config.sampling.seed));
                 });
                 ui.horizontal(|ui| {
-                    ui.label("宽度:");
+                    ui.label("宽度：");
                     ui.add(egui::DragValue::new(&mut self.config.sampling.width).range(64..=2048));
-                    ui.label("高度:");
+                    ui.label("高度：");
                     ui.add(egui::DragValue::new(&mut self.config.sampling.height).range(64..=2048));
                 });
                 ui.horizontal(|ui| {
-                    ui.label("步数:");
+                    ui.label("步数：");
                     ui.add(egui::DragValue::new(&mut self.config.sampling.steps).range(1..=150));
                 });
                 ui.horizontal(|ui| {
-                    ui.label("CFG Scale:");
+                    ui.label("CFG Scale：");
                     ui.add(
                         egui::DragValue::new(&mut self.config.sampling.cfg_scale).range(1.0..=30.0),
                     );
                 });
-
-                // 新增配置项
                 ui.horizontal(|ui| {
-                    ui.label("线程数:");
-                    ui.add(egui::DragValue::new(&mut self.config.threads).range(-1..=64));
+                    let available_thread =
+                        std::thread::available_parallelism().unwrap().get() as i32;
+                    ui.label("线程数：");
+                    ui.add(
+                        egui::DragValue::new(&mut self.config.threads).range(-1..=available_thread),
+                    )
+                    .on_hover_text("使用的线程数（默认值：-1），<=0 时被设为 CPU 物理内核数");
                 });
                 ui.horizontal(|ui| {
-                    ui.label("采样方法:");
+                    ui.label("采样方法：");
                     ui.text_edit_singleline(&mut self.config.sampling_method);
                 });
                 ui.horizontal(|ui| {
-                    ui.label("RNG 类型:");
+                    ui.label("RNG 类型：");
                     ui.text_edit_singleline(&mut self.config.rng_type);
                 });
                 ui.horizontal(|ui| {
-                    ui.label("批次数量:");
+                    ui.label("批次数量：");
                     ui.add(egui::DragValue::new(&mut self.config.batch_count).range(1..=64));
                 });
                 ui.horizontal(|ui| {
-                    ui.label("调度器类型:");
+                    ui.label("调度器类型：");
                     ui.text_edit_singleline(&mut self.config.schedule_type);
                 });
                 ui.horizontal(|ui| {
-                    ui.label("CLIP skip:");
+                    ui.label("CLIP skip：");
                     ui.add(egui::DragValue::new(&mut self.config.clip_skip).range(-1..=12));
                 });
                 ui.checkbox(&mut self.config.vae_tiling, "VAE 分块处理");

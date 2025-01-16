@@ -2,6 +2,8 @@ mod app;
 mod command_builder;
 mod config;
 mod pages;
+mod ui;
+mod utils;
 pub use app::MyApp;
 use command_builder::CommandBuilder;
 use config::Config;
