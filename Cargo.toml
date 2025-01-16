@@ -1,5 +1,5 @@
 [package]
-name = "sdcpp_gui"
+name = "app"
 version = "0.1.6"
 edition = "2021"
 
