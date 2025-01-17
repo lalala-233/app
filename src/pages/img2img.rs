@@ -1,4 +1,4 @@
-use crate::ui::file_select_config;
+use crate::ui::*;
 use eframe::egui;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -12,10 +12,11 @@ pub struct Img2ImgPage {
 impl Img2ImgPage {
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.heading("图生图");
-        file_select_config(
+        select_config(
             ui,
+            true,
             ("输入图片：", &mut self.init_img_path),
-            ("图片文件", &["png", "jpg", "jpeg"]),
+            ("图片文件", &["png", "jpg", "jpeg", "bmp"]),
         );
         ui.horizontal(|ui| {
             ui.label("强度：");

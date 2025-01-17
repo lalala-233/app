@@ -1,4 +1,4 @@
-use crate::{ui::*, Config, PageType};
+use crate::{ui::*, Config};
 use eframe::{
     egui::{self, Context, ScrollArea},
     App,
@@ -100,92 +100,8 @@ impl App for MyApp {
             ScrollArea::vertical().show(ui, |ui| {
                 select_page(ui, &mut self.config.current_page);
                 ui.separator();
-                ui.collapsing("通用", |ui| {
-                    file_select_config(
-                        ui,
-                        ("模型路径：", &mut self.config.model_path),
-                        ("模型文件", &["ckpt", "safetensors"]),
-                    );
-                    file_select_config(
-                        ui,
-                        ("VAE路径：", &mut self.config.vae_path),
-                        ("VAE文件", &["pt", "ckpt"]),
-                    );
-                    dir_select_config(ui, ("输出路径：", &mut self.config.output_dir));
-
-                    ui.horizontal(|ui| {
-                        ui.label("种子：");
-                        ui.add(egui::DragValue::new(&mut self.config.sampling.seed));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("宽度：");
-                        ui.add(
-                            egui::DragValue::new(&mut self.config.sampling.width).range(64..=2048),
-                        );
-                        ui.label("高度：");
-                        ui.add(
-                            egui::DragValue::new(&mut self.config.sampling.height).range(64..=2048),
-                        );
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("步数：");
-                        ui.add(
-                            egui::DragValue::new(&mut self.config.sampling.steps).range(1..=150),
-                        );
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("CFG Scale：");
-                        ui.add(
-                            egui::DragValue::new(&mut self.config.sampling.cfg_scale)
-                                .range(0.0..=30.0),
-                        );
-                    });
-                    ui.horizontal(|ui| {
-                        let available_thread =
-                            std::thread::available_parallelism().unwrap().get() as i32;
-                        ui.label("线程数：");
-                        ui.add(
-                            egui::DragValue::new(&mut self.config.threads)
-                                .range(-1..=available_thread),
-                        )
-                        .on_hover_text("使用的线程数（默认值：-1），<=0 时被设为 CPU 物理内核数");
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("采样方法：");
-                        ui.text_edit_singleline(&mut self.config.sampling_method);
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("RNG 类型：");
-                        ui.text_edit_singleline(&mut self.config.rng_type);
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("批次数量：");
-                        ui.add(egui::DragValue::new(&mut self.config.batch_count).range(1..=64));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("调度器类型：");
-                        ui.text_edit_singleline(&mut self.config.schedule_type);
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("CLIP skip：");
-                        ui.add(egui::DragValue::new(&mut self.config.clip_skip).range(-1..=12));
-                    });
-                    ui.checkbox(&mut self.config.vae_tiling, "VAE 分块处理");
-                    ui.checkbox(&mut self.config.vae_on_cpu, "VAE 在 CPU");
-                    ui.checkbox(&mut self.config.clip_on_cpu, "CLIP 在 CPU");
-                    ui.checkbox(&mut self.config.diffusion_fa, "扩散模型 flash attention");
-                    ui.checkbox(&mut self.config.control_net_on_cpu, "ControlNet 在 CPU");
-                    ui.checkbox(&mut self.config.canny_preprocess, "Canny 预处理");
-                });
-
-                match self.config.current_page {
-                    PageType::TextToImage => self.config.pages.txt2img.show(ui),
-                    PageType::ImageToImage => self.config.pages.img2img.show(ui),
-                    PageType::Convert => self.config.pages.convert.show(ui),
-                }
-
+                set_config(ui, &mut self.config);
                 ui.separator();
-
                 if ui.button("生成").clicked() && !self.is_generating() {
                     self.generate_image();
                 }
