@@ -1,7 +1,10 @@
-use crate::PageType;
+use std::process::Command;
+
+use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
+    pub sdcpp_path: String,
     pub current_page: PageType,
     /// 模型文件路径
     pub model_path: String,
@@ -16,6 +19,7 @@ pub struct Config {
 
     // 新增配置项
     pub threads: i32,
+    pub diffusion_model: Option<String>,
     pub clip_l_path: Option<String>,
     pub clip_g_path: Option<String>,
     pub t5xxl_path: Option<String>,
@@ -50,32 +54,15 @@ pub struct SamplingConfig {
 /// 页面配置
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct PagesConfig {
-    pub txt2img: Txt2ImgConfig,
-    pub img2img: Img2ImgConfig,
-    pub convert: ConvertConfig,
-}
-
-/// 文生图页面配置
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct Txt2ImgConfig {
-    pub default_prompt: String,
-    pub default_negative_prompt: String,
-}
-
-/// 图生图页面配置
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct Img2ImgConfig {
-    pub default_denoising_strength: f32,
-}
-/// 格式转换页面配置
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct ConvertConfig {
-    pub default_output_format: String,
+    pub txt2img: Txt2ImgPage,
+    pub img2img: Img2ImgPage,
+    pub convert: ConvertPage,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
+            sdcpp_path: "./sd".to_string(),
             current_page: PageType::TextToImage,
             model_path: "model.safetensors".to_string(),
             vae_path: String::new(),
@@ -87,39 +74,80 @@ impl Default for Config {
                 height: 512,
                 seed: -1,
             },
-            pages: PagesConfig {
-                txt2img: Txt2ImgConfig {
-                    default_prompt: String::new(),
-                    default_negative_prompt: String::new(),
-                },
-                img2img: Img2ImgConfig {
-                    default_denoising_strength: 0.75,
-                },
-                convert: ConvertConfig {
-                    default_output_format: "png".to_string(),
-                },
-            },
-            // 新增字段默认值
             threads: -1,
-            clip_l_path: None,
-            clip_g_path: None,
-            t5xxl_path: None,
-            taesd_path: None,
-            control_net_path: None,
-            embedding_dir: None,
-            upscale_model_path: None,
-            lora_model_dir: None,
             sampling_method: "euler_a".to_string(),
             rng_type: "cuda".to_string(),
             batch_count: 1,
             schedule_type: "discrete".to_string(),
             clip_skip: -1,
-            vae_tiling: false,
-            vae_on_cpu: false,
-            clip_on_cpu: false,
-            diffusion_fa: false,
-            control_net_on_cpu: false,
-            canny_preprocess: false,
+            pages: Default::default(),
+            diffusion_model: Default::default(),
+            clip_l_path: Default::default(),
+            clip_g_path: Default::default(),
+            t5xxl_path: Default::default(),
+            taesd_path: Default::default(),
+            control_net_path: Default::default(),
+            embedding_dir: Default::default(),
+            upscale_model_path: Default::default(),
+            lora_model_dir: Default::default(),
+            vae_tiling: Default::default(),
+            vae_on_cpu: Default::default(),
+            clip_on_cpu: Default::default(),
+            diffusion_fa: Default::default(),
+            control_net_on_cpu: Default::default(),
+            canny_preprocess: Default::default(),
         }
+    }
+}
+impl Config {
+    pub fn command(&self) -> Command {
+        let mut command = Command::new(&self.sdcpp_path);
+        command.args([
+            "--model",
+            &self.model_path,
+            "--vae",
+            &self.vae_path,
+            "--seed",
+            &self.sampling.seed.to_string(),
+            "--width",
+            &self.sampling.width.to_string(),
+            "--height",
+            &self.sampling.height.to_string(),
+            "--steps",
+            &self.sampling.steps.to_string(),
+            "--cfg-scale",
+            &self.sampling.cfg_scale.to_string(),
+        ]);
+        match self.current_page {
+            PageType::TextToImage => command.args([
+                "--mode",
+                &PageType::TextToImage.to_string(),
+                "--prompt",
+                &self.pages.txt2img.prompt,
+                "--negative-prompt",
+                &self.pages.txt2img.negative_prompt,
+                "--output",
+                &self.output_dir,
+            ]),
+            PageType::ImageToImage => command.args([
+                "--mode",
+                &PageType::ImageToImage.to_string(),
+                "--init-img",
+                &self.pages.img2img.init_img_path,
+                "--strength",
+                &self.pages.img2img.strength.to_string(),
+                "--output",
+                &self.output_dir,
+            ]),
+            PageType::Convert => command.args([
+                "--mode",
+                &PageType::Convert.to_string(),
+                "--input-img",
+                &self.pages.convert.input_img_path,
+                "--output",
+                &self.pages.convert.convert_output_path,
+            ]),
+        };
+        command
     }
 }

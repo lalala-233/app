@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2021"
 
 [dependencies]
@@ -9,3 +9,4 @@ font-kit = { version = "0.14", features = ["source"] }
 eframe = { version = "0.30", features = ["persistence"] }
 log = "0.4"
 rfd = "0.15"
+env_logger = "0.11"

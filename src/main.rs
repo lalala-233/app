@@ -1,5 +1,6 @@
 use app::MyApp;
 fn main() -> eframe::Result<()> {
+    env_logger::init();
     let options = eframe::NativeOptions {
         persist_window: true,
         ..Default::default()

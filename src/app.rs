@@ -1,3 +1,4 @@
+use crate::{ui::*, Config, PageType};
 use eframe::{
     egui::{self, Context, ScrollArea},
     App,
@@ -13,16 +14,10 @@ use std::{
     thread::{self, sleep},
     time::Duration,
 };
-
-use crate::{ui::*, CommandBuilder, Config, ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct MyApp {
     config: Config,
 
-    // 页面实例
-    txt2img_page: Txt2ImgPage,
-    img2img_page: Img2ImgPage,
-    convert_page: ConvertPage,
     #[serde(skip)]
     is_generating: Arc<AtomicBool>,
     #[serde(skip)]
@@ -68,36 +63,12 @@ impl MyApp {
     }
     fn generate_image(&mut self) {
         self.generation_progress = 0.0;
-        let command_builder = CommandBuilder::new("./sd")
-            .model(&self.config.model_path)
-            .vae(&self.config.vae_path)
-            .seed(self.config.sampling.seed)
-            .width(self.config.sampling.width)
-            .height(self.config.sampling.height)
-            .steps(self.config.sampling.steps)
-            .cfg_scale(self.config.sampling.cfg_scale);
 
-        let command_builder = match self.config.current_page {
-            PageType::TextToImage => command_builder
-                .mode(PageType::TextToImage)
-                .prompt(&self.txt2img_page.prompt)
-                .negative_prompt(&self.txt2img_page.negative_prompt)
-                .output(&self.config.output_dir),
-            PageType::ImageToImage => command_builder
-                .mode(PageType::ImageToImage)
-                .init_img(&self.img2img_page.init_img_path)
-                .strength(self.img2img_page.strength)
-                .output(&self.config.output_dir),
-            PageType::Convert => command_builder
-                .mode(PageType::Convert)
-                .input_img(&self.convert_page.input_img_path)
-                .output(&self.convert_page.convert_output_path),
-        };
         let is_generating = Arc::clone(&self.is_generating);
         is_generating.store(true, Relaxed);
         let last_result = self.last_result.clone();
         let last_error = self.last_error.clone();
-        let mut command = command_builder.build();
+        let mut command = self.config.command();
         info!("Args: {:?}", command.get_args());
         thread::spawn(move || {
             let output = command.output();
@@ -211,9 +182,9 @@ impl App for MyApp {
                 });
 
                 match self.config.current_page {
-                    PageType::TextToImage => self.txt2img_page.show(ui),
-                    PageType::ImageToImage => self.img2img_page.show(ui),
-                    PageType::Convert => self.convert_page.show(ui),
+                    PageType::TextToImage => self.config.pages.txt2img.show(ui),
+                    PageType::ImageToImage => self.config.pages.img2img.show(ui),
+                    PageType::Convert => self.config.pages.convert.show(ui),
                 }
 
                 ui.separator();
