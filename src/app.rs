@@ -1,5 +1,5 @@
 use eframe::{
-    egui::{self, Context},
+    egui::{self, Context, ScrollArea},
     App,
 };
 use font_kit::source::SystemSource;
@@ -14,14 +14,9 @@ use std::{
     time::Duration,
 };
 
-use crate::{
-    ui::{dir_select_config, file_select_config},
-    CommandBuilder, Config, ConvertPage, Img2ImgPage, PageType, Txt2ImgPage,
-};
-
+use crate::{ui::*, CommandBuilder, Config, ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct MyApp {
-    current_page: PageType,
     config: Config,
 
     // 页面实例
@@ -74,7 +69,7 @@ impl MyApp {
     fn generate_image(&mut self) {
         self.generation_progress = 0.0;
         let command_builder = CommandBuilder::new("./sd")
-            .model(&self.config.diffusion_model_path)
+            .model(&self.config.model_path)
             .vae(&self.config.vae_path)
             .seed(self.config.sampling.seed)
             .width(self.config.sampling.width)
@@ -82,7 +77,7 @@ impl MyApp {
             .steps(self.config.sampling.steps)
             .cfg_scale(self.config.sampling.cfg_scale);
 
-        let command_builder = match self.current_page {
+        let command_builder = match self.config.current_page {
             PageType::TextToImage => command_builder
                 .mode(PageType::TextToImage)
                 .prompt(&self.txt2img_page.prompt)
@@ -132,112 +127,118 @@ impl MyApp {
 impl App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.selectable_value(&mut self.current_page, PageType::TextToImage, "文生图");
-                ui.selectable_value(&mut self.current_page, PageType::ImageToImage, "图生图");
-                ui.selectable_value(&mut self.current_page, PageType::Convert, "格式转换");
-            });
+            ScrollArea::vertical().show(ui, |ui| {
+                select_page(ui, &mut self.config.current_page);
 
-            ui.separator();
+                ui.separator();
 
-            ui.collapsing("通用", |ui| {
-                file_select_config(
-                    ui,
-                    ("模型路径：", &mut self.config.diffusion_model_path),
-                    ("模型文件", &["ckpt", "safetensors"]),
-                );
-                file_select_config(
-                    ui,
-                    ("VAE路径：", &mut self.config.vae_path),
-                    ("VAE文件", &["pt", "ckpt"]),
-                );
-                dir_select_config(ui, ("输出路径：", &mut self.config.output_dir));
-
-                ui.horizontal(|ui| {
-                    ui.label("种子：");
-                    ui.add(egui::DragValue::new(&mut self.config.sampling.seed));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("宽度：");
-                    ui.add(egui::DragValue::new(&mut self.config.sampling.width).range(64..=2048));
-                    ui.label("高度：");
-                    ui.add(egui::DragValue::new(&mut self.config.sampling.height).range(64..=2048));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("步数：");
-                    ui.add(egui::DragValue::new(&mut self.config.sampling.steps).range(1..=150));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("CFG Scale：");
-                    ui.add(
-                        egui::DragValue::new(&mut self.config.sampling.cfg_scale).range(1.0..=30.0),
+                ui.collapsing("通用", |ui| {
+                    file_select_config(
+                        ui,
+                        ("模型路径：", &mut self.config.model_path),
+                        ("模型文件", &["ckpt", "safetensors"]),
                     );
+                    file_select_config(
+                        ui,
+                        ("VAE路径：", &mut self.config.vae_path),
+                        ("VAE文件", &["pt", "ckpt"]),
+                    );
+                    dir_select_config(ui, ("输出路径：", &mut self.config.output_dir));
+
+                    ui.horizontal(|ui| {
+                        ui.label("种子：");
+                        ui.add(egui::DragValue::new(&mut self.config.sampling.seed));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("宽度：");
+                        ui.add(
+                            egui::DragValue::new(&mut self.config.sampling.width).range(64..=2048),
+                        );
+                        ui.label("高度：");
+                        ui.add(
+                            egui::DragValue::new(&mut self.config.sampling.height).range(64..=2048),
+                        );
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("步数：");
+                        ui.add(
+                            egui::DragValue::new(&mut self.config.sampling.steps).range(1..=150),
+                        );
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("CFG Scale：");
+                        ui.add(
+                            egui::DragValue::new(&mut self.config.sampling.cfg_scale)
+                                .range(1.0..=30.0),
+                        );
+                    });
+                    ui.horizontal(|ui| {
+                        let available_thread =
+                            std::thread::available_parallelism().unwrap().get() as i32;
+                        ui.label("线程数：");
+                        ui.add(
+                            egui::DragValue::new(&mut self.config.threads)
+                                .range(-1..=available_thread),
+                        )
+                        .on_hover_text("使用的线程数（默认值：-1），<=0 时被设为 CPU 物理内核数");
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("采样方法：");
+                        ui.text_edit_singleline(&mut self.config.sampling_method);
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("RNG 类型：");
+                        ui.text_edit_singleline(&mut self.config.rng_type);
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("批次数量：");
+                        ui.add(egui::DragValue::new(&mut self.config.batch_count).range(1..=64));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("调度器类型：");
+                        ui.text_edit_singleline(&mut self.config.schedule_type);
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("CLIP skip：");
+                        ui.add(egui::DragValue::new(&mut self.config.clip_skip).range(-1..=12));
+                    });
+                    ui.checkbox(&mut self.config.vae_tiling, "VAE 分块处理");
+                    ui.checkbox(&mut self.config.vae_on_cpu, "VAE 在 CPU");
+                    ui.checkbox(&mut self.config.clip_on_cpu, "CLIP 在 CPU");
+                    ui.checkbox(&mut self.config.diffusion_fa, "扩散模型 flash attention");
+                    ui.checkbox(&mut self.config.control_net_on_cpu, "ControlNet 在 CPU");
+                    ui.checkbox(&mut self.config.canny_preprocess, "Canny 预处理");
                 });
-                ui.horizontal(|ui| {
-                    let available_thread =
-                        std::thread::available_parallelism().unwrap().get() as i32;
-                    ui.label("线程数：");
-                    ui.add(
-                        egui::DragValue::new(&mut self.config.threads).range(-1..=available_thread),
-                    )
-                    .on_hover_text("使用的线程数（默认值：-1），<=0 时被设为 CPU 物理内核数");
-                });
-                ui.horizontal(|ui| {
-                    ui.label("采样方法：");
-                    ui.text_edit_singleline(&mut self.config.sampling_method);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("RNG 类型：");
-                    ui.text_edit_singleline(&mut self.config.rng_type);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("批次数量：");
-                    ui.add(egui::DragValue::new(&mut self.config.batch_count).range(1..=64));
-                });
-                ui.horizontal(|ui| {
-                    ui.label("调度器类型：");
-                    ui.text_edit_singleline(&mut self.config.schedule_type);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("CLIP skip：");
-                    ui.add(egui::DragValue::new(&mut self.config.clip_skip).range(-1..=12));
-                });
-                ui.checkbox(&mut self.config.vae_tiling, "VAE 分块处理");
-                ui.checkbox(&mut self.config.vae_on_cpu, "VAE 在 CPU");
-                ui.checkbox(&mut self.config.clip_on_cpu, "CLIP 在 CPU");
-                ui.checkbox(&mut self.config.diffusion_fa, "扩散模型 flash attention");
-                ui.checkbox(&mut self.config.control_net_on_cpu, "ControlNet 在 CPU");
-                ui.checkbox(&mut self.config.canny_preprocess, "Canny 预处理");
+
+                match self.config.current_page {
+                    PageType::TextToImage => self.txt2img_page.show(ui),
+                    PageType::ImageToImage => self.img2img_page.show(ui),
+                    PageType::Convert => self.convert_page.show(ui),
+                }
+
+                ui.separator();
+
+                if ui.button("生成").clicked() && !self.is_generating() {
+                    self.generate_image();
+                }
+
+                if self.is_generating() {
+                    ui.label("生成中...");
+                    ui.spinner();
+                }
+
+                if let Ok(result) = self.last_result.try_lock() {
+                    if !result.is_empty() {
+                        ui.label(result.as_str());
+                    }
+                }
+
+                if let Ok(error) = self.last_error.try_lock() {
+                    if !error.is_empty() {
+                        ui.colored_label(egui::Color32::RED, error.as_str());
+                    }
+                }
             });
-
-            match self.current_page {
-                PageType::TextToImage => self.txt2img_page.show(ui),
-                PageType::ImageToImage => self.img2img_page.show(ui),
-                PageType::Convert => self.convert_page.show(ui),
-            }
-
-            ui.separator();
-
-            if ui.button("生成").clicked() && !self.is_generating() {
-                self.generate_image();
-            }
-
-            if self.is_generating() {
-                ui.label("生成中...");
-                ui.spinner();
-            }
-
-            if let Ok(result) = self.last_result.try_lock() {
-                if !result.is_empty() {
-                    ui.label(result.as_str());
-                }
-            }
-
-            if let Ok(error) = self.last_error.try_lock() {
-                if !error.is_empty() {
-                    ui.colored_label(egui::Color32::RED, error.as_str());
-                }
-            }
         });
     }
 

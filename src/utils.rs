@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-
 pub fn validate_image_path(path: &str) -> bool {
     let path = PathBuf::from(path);
     path.exists() && path.is_file()

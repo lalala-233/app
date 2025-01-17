@@ -1,5 +1,4 @@
 use app::MyApp;
-
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
         persist_window: true,

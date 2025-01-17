@@ -1,9 +1,10 @@
+use crate::PageType;
 use serde::{Deserialize, Serialize};
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
+    pub current_page: PageType,
     /// 模型文件路径
-    pub diffusion_model_path: String,
+    pub model_path: String,
     /// VAE文件路径
     pub vae_path: String,
     /// 输出目录
@@ -75,7 +76,8 @@ pub struct ConvertConfig {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            diffusion_model_path: "model.safetensors".to_string(),
+            current_page: PageType::TextToImage,
+            model_path: "model.safetensors".to_string(),
             vae_path: String::new(),
             output_dir: "output".to_string(),
             sampling: SamplingConfig {

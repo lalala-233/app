@@ -1,7 +1,5 @@
-use std::process::Command;
-
 use crate::PageType;
-
+use std::process::Command;
 pub struct CommandBuilder {
     command: Command,
 }

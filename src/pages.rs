@@ -3,7 +3,6 @@ pub mod img2img;
 pub mod txt2img;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Default)]
 pub enum PageType {
     #[default]

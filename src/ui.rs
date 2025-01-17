@@ -1,5 +1,5 @@
+use crate::PageType;
 use eframe::egui::Ui;
-
 pub fn file_select_config(
     ui: &mut Ui,
     (lable_name, file_path): (&str, &mut String),
@@ -28,5 +28,13 @@ pub fn dir_select_config(ui: &mut Ui, (lable_name, dir_path): (&str, &mut String
                 *dir_path = path.to_string_lossy().to_string();
             }
         }
+    });
+}
+
+pub fn select_page(ui: &mut Ui, current_page: &mut PageType) {
+    ui.horizontal(|ui| {
+        ui.selectable_value(current_page, PageType::TextToImage, "文生图");
+        ui.selectable_value(current_page, PageType::ImageToImage, "图生图");
+        ui.selectable_value(current_page, PageType::Convert, "格式转换");
     });
 }

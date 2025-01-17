@@ -1,7 +1,6 @@
 use eframe::egui;
-
 use serde::{Deserialize, Serialize};
-#[derive(Serialize, Deserialize, Default,Clone,Debug)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct ConvertPage {
     pub input_img_path: String,
     pub convert_output_path: String,

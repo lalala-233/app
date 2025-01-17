@@ -1,5 +1,4 @@
 use eframe::egui;
-
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct Img2ImgPage {
