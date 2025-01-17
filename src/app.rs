@@ -63,7 +63,6 @@ impl MyApp {
     }
     fn generate_image(&mut self) {
         self.generation_progress = 0.0;
-
         let is_generating = Arc::clone(&self.is_generating);
         is_generating.store(true, Relaxed);
         let last_result = self.last_result.clone();
@@ -100,9 +99,7 @@ impl App for MyApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ScrollArea::vertical().show(ui, |ui| {
                 select_page(ui, &mut self.config.current_page);
-
                 ui.separator();
-
                 ui.collapsing("通用", |ui| {
                     file_select_config(
                         ui,
@@ -140,7 +137,7 @@ impl App for MyApp {
                         ui.label("CFG Scale：");
                         ui.add(
                             egui::DragValue::new(&mut self.config.sampling.cfg_scale)
-                                .range(1.0..=30.0),
+                                .range(0.0..=30.0),
                         );
                     });
                     ui.horizontal(|ui| {

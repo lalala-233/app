@@ -1,33 +1,27 @@
-use std::process::Command;
-
 use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+use std::process::Command;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
-    pub sdcpp_path: String,
+    pub sdcpp_path: PathBuf,
     pub current_page: PageType,
-    /// 模型文件路径
-    pub model_path: String,
-    /// VAE文件路径
-    pub vae_path: String,
-    /// 输出目录
-    pub output_dir: String,
-    /// 默认采样参数
+    pub model_path: PathBuf,
+    pub vae_path: PathBuf,
+    pub output_dir: PathBuf,
     pub sampling: SamplingConfig,
-    /// 页面配置
     pub pages: PagesConfig,
-
-    // 新增配置项
     pub threads: i32,
-    pub diffusion_model: Option<String>,
-    pub clip_l_path: Option<String>,
-    pub clip_g_path: Option<String>,
-    pub t5xxl_path: Option<String>,
-    pub taesd_path: Option<String>,
-    pub control_net_path: Option<String>,
-    pub embedding_dir: Option<String>,
-    pub upscale_model_path: Option<String>,
-    pub lora_model_dir: Option<String>,
+    pub diffusion_model: Option<PathBuf>,
+    pub clip_l_path: Option<PathBuf>,
+    pub clip_g_path: Option<PathBuf>,
+    pub t5xxl_path: Option<PathBuf>,
+    pub taesd_path: Option<PathBuf>,
+    pub control_net_path: Option<PathBuf>,
+    pub embedding_dir: Option<PathBuf>,
+    pub upscale_model_path: Option<PathBuf>,
+    pub lora_model_dir: Option<PathBuf>,
     pub sampling_method: String,
     pub rng_type: String,
     pub batch_count: u32,
@@ -41,32 +35,14 @@ pub struct Config {
     pub canny_preprocess: bool,
 }
 
-/// 采样参数配置
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct SamplingConfig {
-    pub steps: u32,
-    pub cfg_scale: f32,
-    pub width: u32,
-    pub height: u32,
-    pub seed: i64,
-}
-
-/// 页面配置
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct PagesConfig {
-    pub txt2img: Txt2ImgPage,
-    pub img2img: Img2ImgPage,
-    pub convert: ConvertPage,
-}
-
 impl Default for Config {
     fn default() -> Self {
         Self {
-            sdcpp_path: "./sd".to_string(),
+            sdcpp_path: PathBuf::from("./sd"),
             current_page: PageType::TextToImage,
-            model_path: "model.safetensors".to_string(),
-            vae_path: String::new(),
-            output_dir: "output".to_string(),
+            model_path: PathBuf::from("model.safetensors"),
+            vae_path: PathBuf::new(),
+            output_dir: PathBuf::from("output"),
             sampling: SamplingConfig {
                 steps: 20,
                 cfg_scale: 7.0,
@@ -99,14 +75,34 @@ impl Default for Config {
         }
     }
 }
+
+/// 采样参数配置
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+pub struct SamplingConfig {
+    pub seed: i64,
+    // 不会为 0
+    pub cfg_scale: f32,
+    pub steps: u32,
+    pub width: u32,
+    pub height: u32,
+}
+
+/// 页面配置
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+pub struct PagesConfig {
+    pub txt2img: Txt2ImgPage,
+    pub img2img: Img2ImgPage,
+    pub convert: ConvertPage,
+}
+
 impl Config {
     pub fn command(&self) -> Command {
         let mut command = Command::new(&self.sdcpp_path);
         command.args([
             "--model",
-            &self.model_path,
+            self.model_path.to_str().unwrap(),
             "--vae",
-            &self.vae_path,
+            self.vae_path.to_str().unwrap(),
             "--seed",
             &self.sampling.seed.to_string(),
             "--width",
@@ -117,6 +113,20 @@ impl Config {
             &self.sampling.steps.to_string(),
             "--cfg-scale",
             &self.sampling.cfg_scale.to_string(),
+            "--threads",
+            &self.threads.to_string(),
+            "--sampling-method",
+            &self.sampling_method,
+            "--rng",
+            &self.rng_type,
+            "--batch-count",
+            &self.batch_count.to_string(),
+            "--schedule",
+            &self.schedule_type,
+            "--clip-skip",
+            &self.clip_skip.to_string(),
+            "--output",
+            self.output_dir.to_str().unwrap(),
         ]);
         match self.current_page {
             PageType::TextToImage => command.args([
@@ -126,26 +136,20 @@ impl Config {
                 &self.pages.txt2img.prompt,
                 "--negative-prompt",
                 &self.pages.txt2img.negative_prompt,
-                "--output",
-                &self.output_dir,
             ]),
             PageType::ImageToImage => command.args([
                 "--mode",
                 &PageType::ImageToImage.to_string(),
                 "--init-img",
-                &self.pages.img2img.init_img_path,
+                self.pages.img2img.init_img_path.to_str().unwrap(),
                 "--strength",
                 &self.pages.img2img.strength.to_string(),
-                "--output",
-                &self.output_dir,
             ]),
             PageType::Convert => command.args([
                 "--mode",
                 &PageType::Convert.to_string(),
                 "--input-img",
-                &self.pages.convert.input_img_path,
-                "--output",
-                &self.pages.convert.convert_output_path,
+                self.pages.convert.input_img_path.to_str().unwrap(),
             ]),
         };
         command

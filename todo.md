@@ -4,9 +4,9 @@
 
 - [x] h, --help                         show this help message and exit
 - [x] M, --mode [MODEL]                 run mode (txt2img or img2img or convert, default: txt2img)
-- [] t, --threads N                    number of threads to use during computation (default: -1)
+- [x] t, --threads N                    number of threads to use during computation (default: -1)
                                      If threads <= 0, then threads will be set to the number of CPU physical cores
-- [] m, --model [MODEL]                path to full model
+- [x] m, --model [MODEL]                path to full model
 - [] -diffusion-model                  path to the standalone diffusion model
 - [] -clip_l                           path to the clip-l text encoder
 - [] -clip_g                           path to the clip-g text encoder
