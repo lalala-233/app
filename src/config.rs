@@ -1,4 +1,6 @@
+pub mod enums;
 use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
+use enums::{Scheduler, WeightType};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::Command;
@@ -20,7 +22,6 @@ pub struct Config {
     pub embedding_dir: PathBuf,
     pub stacked_id_embedding_dir: PathBuf,
     pub input_id_images_dir: PathBuf,
-    pub normalize_input: bool,
     pub sampling: SamplingConfig,
     pub upscale_model_path: PathBuf,
     pub upscale_repeats: u32,
@@ -29,8 +30,9 @@ pub struct Config {
     pub sampling_method: String,
     pub rng_type: String,
     pub batch_count: u32,
-    pub schedule_type: String,
+    pub schedule_type: Scheduler,
     pub clip_skip: i32,
+    pub normalize_input: bool,
     pub vae_tiling: bool,
     pub vae_on_cpu: bool,
     pub clip_on_cpu: bool,
@@ -73,7 +75,7 @@ impl Default for Config {
             sampling_method: "euler_a".to_string(),
             rng_type: "cuda".to_string(),
             batch_count: 1,
-            schedule_type: "discrete".to_string(),
+            schedule_type: Default::default(),
             clip_skip: -1,
             pages: Default::default(),
             vae_tiling: Default::default(),
@@ -85,21 +87,6 @@ impl Default for Config {
         }
     }
 }
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub enum WeightType {
-    #[default]
-    None,
-    F32,
-    F16,
-    Q4_0,
-    Q4_1,
-    Q5_0,
-    Q5_1,
-    Q8_0,
-    Q2K,
-    Q3K,
-    Q4Ks,
-}
 
 /// 采样参数配置
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
@@ -107,6 +94,7 @@ pub struct SamplingConfig {
     pub seed: i64,
     // 不会为 0
     pub cfg_scale: f32,
+    // 大于 0
     pub steps: u32,
     pub width: u32,
     pub height: u32,
@@ -123,6 +111,35 @@ pub struct PagesConfig {
 impl Config {
     pub fn command(&self) -> Command {
         let mut command = Command::new(&self.sdcpp_path);
+        self.args(&mut command);
+        self.flags(&mut command);
+        match self.current_page {
+            PageType::TextToImage => command.args([
+                "--mode",
+                PageType::TextToImage.as_ref(),
+                "--prompt",
+                &self.pages.txt2img.prompt,
+                "--negative-prompt",
+                &self.pages.txt2img.negative_prompt,
+            ]),
+            PageType::ImageToImage => command.args([
+                "--mode",
+                PageType::ImageToImage.as_ref(),
+                "--init-img",
+                &self.pages.img2img.init_img_path.to_string_lossy(),
+                "--strength",
+                &self.pages.img2img.strength.to_string(),
+            ]),
+            PageType::Convert => command.args([
+                "--mode",
+                PageType::Convert.as_ref(),
+                "--input-img",
+                &self.pages.convert.input_img_path.to_string_lossy(),
+            ]),
+        };
+        command
+    }
+    fn args<'a>(&self, command: &'a mut Command) -> &'a mut Command {
         command.args([
             "--threads",
             &self.threads.to_string(),
@@ -146,6 +163,10 @@ impl Config {
             &self.stacked_id_embedding_dir.to_string_lossy(),
             "--input-id-images-dir",
             &self.input_id_images_dir.to_string_lossy(),
+            "--upscale-model",
+            &self.upscale_model_path.to_string_lossy(),
+            "--upscale-repeats",
+            &self.upscale_repeats.to_string(),
             "--seed",
             &self.sampling.seed.to_string(),
             "--width",
@@ -163,36 +184,35 @@ impl Config {
             "--batch-count",
             &self.batch_count.to_string(),
             "--schedule",
-            &self.schedule_type,
+            self.schedule_type.as_ref(),
             "--clip-skip",
             &self.clip_skip.to_string(),
             "--output",
             &self.output_path.to_string_lossy(),
-        ]);
-        match self.current_page {
-            PageType::TextToImage => command.args([
-                "--mode",
-                &PageType::TextToImage.to_string(),
-                "--prompt",
-                &self.pages.txt2img.prompt,
-                "--negative-prompt",
-                &self.pages.txt2img.negative_prompt,
-            ]),
-            PageType::ImageToImage => command.args([
-                "--mode",
-                &PageType::ImageToImage.to_string(),
-                "--init-img",
-                &self.pages.img2img.init_img_path.to_string_lossy(),
-                "--strength",
-                &self.pages.img2img.strength.to_string(),
-            ]),
-            PageType::Convert => command.args([
-                "--mode",
-                &PageType::Convert.to_string(),
-                "--input-img",
-                &self.pages.convert.input_img_path.to_string_lossy(),
-            ]),
-        };
+        ])
+    }
+    fn flags<'a>(&self, command: &'a mut Command) -> &'a mut Command {
+        if self.normalize_input {
+            command.arg("--normalize-input");
+        }
+        if self.vae_tiling {
+            command.arg("--vae_tiling");
+        }
+        if self.vae_on_cpu {
+            command.arg("--vae_on_cpu");
+        }
+        if self.clip_on_cpu {
+            command.arg("--clip_on_cpu");
+        }
+        if self.diffusion_fa {
+            command.arg("--diffusion_fa");
+        }
+        if self.control_net_on_cpu {
+            command.arg("--control_net_on_cpu");
+        }
+        if self.canny_preprocess {
+            command.arg("--canny_preprocess");
+        }
         command
     }
 }

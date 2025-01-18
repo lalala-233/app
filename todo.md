@@ -17,9 +17,9 @@
 - [x] --embd-dir [EMBEDDING_PATH]        path to embeddings
 - [x] --stacked-id-embd-dir [DIR]        path to PHOTOMAKER stacked id embeddings
 - [x] --input-id-images-dir [DIR]        path to PHOTOMAKER input id images dir
-- [] --normalize-input                  normalize PHOTOMAKER input id images
-- [] --upscale-model [ESRGAN_PATH]      path to esrgan model. Upscale images after generate, just RealESRGAN_x4plus_anime_6B supported by now
-- [] --upscale-repeats                  Run the ESRGAN upscaler this many times (default 1)
+- [x] --normalize-input                  normalize PHOTOMAKER input id images
+- [x] --upscale-model [ESRGAN_PATH]      path to esrgan model. Upscale images after generate, just RealESRGAN_x4plus_anime_6B supported by now
+- [x] --upscale-repeats                  Run the ESRGAN upscaler this many times (default 1)
 - [] --type [TYPE]                      weight type (examples: f32, f16, q4_0, q4_1, q5_0, q5_1, q8_0, q2_K, q3_K, q4_K)
                                      If not specified, the default is the type of the weight file
 - [] --lora-model-dir [DIR]             lora model directory
