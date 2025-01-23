@@ -21,9 +21,9 @@
 - [x] --upscale-model [ESRGAN_PATH]      path to esrgan model. Upscale images after generate, just RealESRGAN_x4plus_anime_6B supported by now
 - [x] --upscale-repeats                  Run the ESRGAN upscaler this many times (default 1)
 - [x] --type [TYPE]                      weight type (examples: f32, f16, q4_0, q4_1, q5_0, q5_1, q8_0, q2_K, q3_K, q4_K)            If not specified, the default is the type of the weight file
-- [] --lora-model-dir [DIR]             lora model directory
-- [] -i, --init-img [IMAGE]             path to the input image, required by img2img
-- [] --mask [MASK]                      path to the mask image, required by img2img with mask
+- [x] --lora-model-dir [DIR]             lora model directory
+- [x] -i, --init-img [IMAGE]             path to the input image, required by img2img
+- [x] --mask [MASK]                      path to the mask image, required by img2img with mask
 - [] --control-image [IMAGE]            path to image condition, control net
 - [] -o, --output OUTPUT                path to write result image to (default: ./output.png)
 - [] -p, --prompt [PROMPT]              the prompt to render

@@ -18,8 +18,16 @@ fn model_file_select(ui: &mut Ui, label: &str, file_path: &mut PathBuf) -> Respo
     );
     file_select(ui, true, (label, file_path), (filter_name, filter))
 }
-fn png_file_select(ui: &mut Ui, (label, dir_path): (&str, &mut PathBuf)) -> Response {
-    file_select(ui, false, (label, dir_path), ("", &["png"]))
+fn folder_select(ui: &mut Ui, (label, dir_path): (&str, &mut PathBuf)) -> Response {
+    file_select(ui, false, (label, dir_path), Default::default())
+}
+pub fn image_file_select(ui: &mut Ui, (label, dir_path): (&str, &mut PathBuf)) -> Response {
+    file_select(
+        ui,
+        true,
+        (label, dir_path),
+        ("图片文件", &["png", "jpg", "jpeg", "bmp"]),
+    )
 }
 fn select_config_combobox<T>(ui: &mut Ui, label: &str, current: &mut T) -> Response
 where
@@ -49,7 +57,7 @@ pub fn drag_value<Num: emath::Numeric>(
         ui.add(DragValue::new(value).range(range));
     });
 }
-pub fn file_select(
+fn file_select(
     ui: &mut Ui,
     is_file: bool,
     (label_name, pathbuf): (&str, &mut PathBuf),
@@ -69,17 +77,22 @@ pub fn file_select(
         if is_changed {
             *pathbuf = PathBuf::from_str(path_str).unwrap_or_default()
         }
-        let file_dialog = if is_file {
-            rfd::FileDialog::new()
-                .set_directory("./")
-                .add_filter(filter_name, filter)
-        } else {
-            rfd::FileDialog::new().set_directory("./")
-        };
-        if is_clicked {
-            if let Some(path) = file_dialog.pick_file() {
-                *pathbuf = path;
+        let mut file_dialog = rfd::FileDialog::new().set_directory("./");
+        if is_file {
+            file_dialog = file_dialog.add_filter(filter_name, filter);
+        }
+        match (is_clicked, is_file) {
+            (true, true) => {
+                if let Some(path) = file_dialog.pick_file() {
+                    *pathbuf = path;
+                }
             }
+            (true, false) => {
+                if let Some(path) = file_dialog.pick_folder() {
+                    *pathbuf = path;
+                }
+            }
+            _ => (),
         }
         if let Some(ext) = pathbuf.extension() {
             if filter.contains(&ext.to_string_lossy().as_ref()) && pathbuf.is_file() {
@@ -107,7 +120,8 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
         drag_value(ui, "超分辨率次数", &mut config.upscale_repeats, 1..=114514);
         select_config_combobox(ui, "权重类型", &mut config.weight_type)
             .on_hover_text("未指定时权重将和模型文件一致");
-        png_file_select(ui, ("输出路径", &mut config.output_path));
+        folder_select(ui, ("LoRa 路径", &mut config.lora_model_dir));
+        folder_select(ui, ("输出路径", &mut config.output_path));
         drag_value(ui, "种子", &mut config.sampling.seed, -1..=1145141919810);
         ui.horizontal(|ui| {
             ui.label("宽度：");
