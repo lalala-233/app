@@ -1,9 +1,11 @@
-pub mod enums;
+pub mod scheduler;
+pub mod weight_type;
 use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
-use enums::{Scheduler, WeightType};
+use scheduler::Scheduler;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::Command;
+use weight_type::WeightType;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
@@ -46,7 +48,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             sdcpp_path: PathBuf::from("./sd"),
-            current_page: PageType::TextToImage,
+            current_page: PageType::Txt2Img,
             threads: -1,
             model_path: PathBuf::from("model.safetensors"),
             _diffusion_model: Default::default(),
@@ -114,19 +116,23 @@ impl Config {
         self.args(&mut command);
         self.flags(&mut command);
         match self.current_page {
-            PageType::TextToImage => command.args([
+            PageType::Txt2Img => command.args([
                 "--mode",
-                PageType::TextToImage.as_ref(),
+                PageType::Txt2Img.as_ref(),
                 "--prompt",
                 &self.pages.txt2img.prompt,
                 "--negative-prompt",
                 &self.pages.txt2img.negative_prompt,
             ]),
-            PageType::ImageToImage => command.args([
+            PageType::Img2Img => command.args([
                 "--mode",
-                PageType::ImageToImage.as_ref(),
+                PageType::Img2Img.as_ref(),
                 "--init-img",
                 &self.pages.img2img.init_img_path.to_string_lossy(),
+                "--mask",
+                &self.pages.img2img.mask_img_path.to_string_lossy(),
+                "--guidance",
+                &self.pages.img2img.guidance.to_string(),
                 "--strength",
                 &self.pages.img2img.strength.to_string(),
             ]),

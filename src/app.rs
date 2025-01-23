@@ -54,6 +54,9 @@ impl MyApp {
         }
     }
     pub fn new(cc: &eframe::CreationContext) -> Self {
+        let mut style = egui::Style::default();
+        style.interaction.tooltip_delay = 0.1;
+        cc.egui_ctx.set_style(style);
         Self::set_fonts(&cc.egui_ctx);
         // 从持久化存储加载应用状态
         if let Some(storage) = cc.storage {
@@ -123,6 +126,7 @@ impl App for MyApp {
                     }
                 }
             });
+            ui.horizontal(egui::widgets::global_theme_preference_switch)
         });
     }
 
