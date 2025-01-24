@@ -13,3 +13,17 @@ pub enum Schedule {
     Ays,
     Gits,
 }
+
+#[cfg(test)]
+mod test {
+    use super::Schedule;
+    use strum::VariantArray;
+    #[test]
+    fn as_str() {
+        let expect = ["discrete", "karras", "exponential", "ays", "gits"].into_iter();
+        let actual = Schedule::VARIANTS.iter().map(|v| v.as_ref());
+        for (expect, actual) in expect.zip(actual) {
+            assert_eq!(expect, actual)
+        }
+    }
+}

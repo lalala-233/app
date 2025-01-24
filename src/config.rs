@@ -1,10 +1,12 @@
 mod flags;
 mod rng;
+mod sampling_method;
 mod schedule;
 mod weight_type;
 use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
 use flags::Flags;
 use rng::RngType;
+use sampling_method::SamplingMethod;
 use schedule::Schedule;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -34,7 +36,7 @@ pub struct Config {
     pub upscale_repeats: u32,
     pub weight_type: WeightType,
     pub lora_model_dir: PathBuf,
-    pub sampling_method: String,
+    pub sampling_method: SamplingMethod,
     pub rng_type: RngType,
     pub batch_count: u32,
     pub schedule_type: Schedule,
@@ -67,7 +69,7 @@ impl Default for Config {
             lora_model_dir: Default::default(),
             output_path: PathBuf::from("output"),
             sampling: Default::default(),
-            sampling_method: "euler_a".to_string(),
+            sampling_method: Default::default(),
             rng_type: Default::default(),
             batch_count: 1,
             schedule_type: Default::default(),
@@ -188,7 +190,7 @@ impl Config {
             "--slg-scale",
             &self.sampling.slg_scale.to_string(),
             "--sampling-method",
-            &self.sampling_method,
+            self.sampling_method.as_ref(),
             "--rng",
             self.rng_type.as_ref(),
             "--batch-count",

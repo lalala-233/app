@@ -149,10 +149,7 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
             ui.add(DragValue::new(&mut config.threads).range(-1..=available_thread))
                 .on_hover_text("<=0 时被设为 CPU 物理内核数");
         });
-        ui.horizontal(|ui| {
-            ui.label("采样方法");
-            ui.text_edit_singleline(&mut config.sampling_method);
-        });
+        select_config_combobox(ui, "采样方法", &mut config.sampling_method);
         select_config_combobox(ui, "RNG 类型", &mut config.rng_type);
 
         drag_value(ui, "批次数量", &mut config.batch_count, 1..=64);
