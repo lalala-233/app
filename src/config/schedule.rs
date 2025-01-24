@@ -5,7 +5,7 @@ use strum::{AsRefStr, VariantArray};
     Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, VariantArray, AsRefStr,
 )]
 #[strum(serialize_all = "lowercase")]
-pub enum Scheduler {
+pub enum Schedule {
     #[default]
     Discrete,
     Karras,

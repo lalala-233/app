@@ -1,9 +1,11 @@
 mod flags;
-mod scheduler;
+mod rng;
+mod schedule;
 mod weight_type;
 use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
 use flags::Flags;
-use scheduler::Scheduler;
+use rng::RngType;
+use schedule::Schedule;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::Command;
@@ -33,9 +35,9 @@ pub struct Config {
     pub weight_type: WeightType,
     pub lora_model_dir: PathBuf,
     pub sampling_method: String,
-    pub rng_type: String,
+    pub rng_type: RngType,
     pub batch_count: u32,
-    pub schedule_type: Scheduler,
+    pub schedule_type: Schedule,
     pub clip_skip: i32,
     pub flags: Flags,
     pub output_path: PathBuf,
@@ -64,16 +66,9 @@ impl Default for Config {
             weight_type: Default::default(),
             lora_model_dir: Default::default(),
             output_path: PathBuf::from("output"),
-            sampling: SamplingConfig {
-                steps: 20,
-                cfg_scale: 7.0,
-                slg_scale: 0.0,
-                width: 512,
-                height: 512,
-                seed: -1,
-            },
+            sampling: Default::default(),
             sampling_method: "euler_a".to_string(),
-            rng_type: "cuda".to_string(),
+            rng_type: Default::default(),
             batch_count: 1,
             schedule_type: Default::default(),
             clip_skip: -1,
@@ -84,7 +79,7 @@ impl Default for Config {
 }
 
 /// 采样参数配置
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SamplingConfig {
     pub seed: i64,
     // 不会为 0
@@ -95,7 +90,18 @@ pub struct SamplingConfig {
     pub width: u32,
     pub height: u32,
 }
-
+impl Default for SamplingConfig {
+    fn default() -> Self {
+        Self {
+            steps: 20,
+            cfg_scale: 7.0,
+            slg_scale: 0.0,
+            width: 512,
+            height: 512,
+            seed: -1,
+        }
+    }
+}
 /// 页面配置
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct PagesConfig {
@@ -184,7 +190,7 @@ impl Config {
             "--sampling-method",
             &self.sampling_method,
             "--rng",
-            &self.rng_type,
+            self.rng_type.as_ref(),
             "--batch-count",
             &self.batch_count.to_string(),
             "--schedule",

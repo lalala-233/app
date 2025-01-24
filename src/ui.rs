@@ -153,10 +153,8 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
             ui.label("采样方法");
             ui.text_edit_singleline(&mut config.sampling_method);
         });
-        ui.horizontal(|ui| {
-            ui.label("RNG 类型");
-            ui.text_edit_singleline(&mut config.rng_type);
-        });
+        select_config_combobox(ui, "RNG 类型", &mut config.rng_type);
+
         drag_value(ui, "批次数量", &mut config.batch_count, 1..=64);
         select_config_combobox(ui, "调度器", &mut config.schedule_type);
         drag_value(ui, "CLIP skip", &mut config.clip_skip, -1..=12);
