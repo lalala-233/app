@@ -231,7 +231,7 @@ dependencies = [
 
 [[package]]
 name = "app"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "eframe",
  "env_logger",

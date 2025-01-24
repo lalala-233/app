@@ -24,13 +24,13 @@
 - [x] --lora-model-dir [DIR]             lora model directory
 - [x] -i, --init-img [IMAGE]             path to the input image, required by img2img
 - [x] --mask [MASK]                      path to the mask image, required by img2img with mask
-- [] --control-image [IMAGE]            path to image condition, control net
-- [] -o, --output OUTPUT                path to write result image to (default: ./output.png)
-- [] -p, --prompt [PROMPT]              the prompt to render
-- [] -n, --negative-prompt PROMPT       the negative prompt (default: "")
-- [] --cfg-scale SCALE                  unconditional guidance scale: (default: 7.0)
-- [] --guidance SCALE                   guidance scale for img2img (default: 3.5)
-- [] --slg-scale SCALE                  skip layer guidance (SLG) scale, only for DiT models: (default: 0)
+- [x] --control-image [IMAGE]            path to image condition, control net
+- [x] -o, --output OUTPUT                path to write result image to (default: ./output.png)
+- [x] -p, --prompt [PROMPT]              the prompt to render
+- [x] -n, --negative-prompt PROMPT       the negative prompt (default: "")
+- [x] --cfg-scale SCALE                  unconditional guidance scale: (default: 7.0)
+- [x] --guidance SCALE                   guidance scale for img2img (default: 3.5)
+- [x] --slg-scale SCALE                  skip layer guidance (SLG) scale, only for DiT models: (default: 0)
                                      0 means disabled, a value of 2.5 is nice for sd3.5 medium
 - [] --skip-layers LAYERS               Layers to skip for SLG steps: (default: [7,8,9])
 - [] --skip-layer-start START           SLG enabling point: (default: 0.01)

@@ -51,11 +51,12 @@ pub fn drag_value<Num: emath::Numeric>(
     label: &str,
     value: &mut Num,
     range: RangeInclusive<Num>,
-) {
+) -> Response {
     ui.horizontal(|ui| {
         ui.label(label);
-        ui.add(DragValue::new(value).range(range));
-    });
+        ui.add(DragValue::new(value).range(range))
+    })
+    .inner
 }
 fn file_select(
     ui: &mut Ui,
@@ -111,6 +112,7 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
         model_file_select(ui, "t5xxl 模型", &mut config.t5xxl_path);
         model_file_select(ui, "VAE 模型", &mut config.vae_path);
         model_file_select(ui, "TAESD 模型", &mut config.taesd_path);
+        model_file_select(ui, "Control Net 模型", &mut config.control_net_path);
         model_file_select(ui, "embedding 模型", &mut config.embedding_dir);
         model_file_select(ui, "PhotoMaker 模型", &mut config.stacked_id_embedding_dir);
         model_file_select(ui, "PhotoMaker 输入图片", &mut config.input_id_images_dir);
@@ -120,6 +122,7 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
         select_config_combobox(ui, "权重类型", &mut config.weight_type)
             .on_hover_text("未指定时权重将和模型文件一致");
         folder_select(ui, ("LoRa 路径", &mut config.lora_model_dir));
+        image_file_select(ui, ("Control Net 图像", &mut config.control_net_image));
         folder_select(ui, ("输出路径", &mut config.output_path));
         drag_value(ui, "种子", &mut config.sampling.seed, -1..=1145141919810);
         ui.horizontal(|ui| {
@@ -136,8 +139,10 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
                     .speed(64),
             );
         });
+        drag_value(ui, "CFG Scale", &mut config.sampling.cfg_scale, 0.1..=30.0);
+        drag_value(ui, "SLG Scale", &mut config.sampling.slg_scale, 0.1..=30.0)
+            .on_hover_text("仅适用于 DiT 模型（默认值：0） ");
         drag_value(ui, "步数", &mut config.sampling.steps, 1..=150);
-        drag_value(ui, "CFG Scale", &mut config.sampling.cfg_scale, 0.01..=30.0);
         ui.horizontal(|ui| {
             let available_thread = std::thread::available_parallelism().unwrap().get() as i32;
             ui.label("线程数");
