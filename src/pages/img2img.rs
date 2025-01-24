@@ -18,7 +18,7 @@ impl Img2ImgPage {
         image_file_select(ui, ("输入图片", &mut self.init_img_path));
         image_file_select(ui, ("Mask 图片", &mut self.mask_img_path))
             .on_hover_text("需要使用 Inpaint 模型");
-        drag_value(ui, "guidance", &mut self.strength, 0.0..=10.0);
-        drag_value(ui, "强度", &mut self.strength, 0.0..=1.0);
+        drag_value(ui, ("guidance", &mut self.strength), 0.0..=10.0);
+        drag_value(ui, ("强度", &mut self.strength), 0.0..=1.0);
     }
 }

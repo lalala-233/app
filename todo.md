@@ -38,7 +38,7 @@
                                      SLG will be enabled at step int([STEPS]*[START]) and disabled at int([STEPS]*[END])
 - [x] --strength STRENGTH                strength for noising/unnoising (default: 0.75)
 - [] --style-ratio STYLE-RATIO          strength for keeping input identity (default: 20%)
-- [] --control-strength STRENGTH        strength to apply Control Net (default: 0.9)
+- [x] --control-strength STRENGTH        strength to apply Control Net (default: 0.9)
                                      1.0 corresponds to full destruction of information in init image
 - [x] -H, --height H                     image height, in pixel space (default: 512)
 - [x] -W, --width W                      image width, in pixel space (default: 512)

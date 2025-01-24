@@ -11,7 +11,7 @@ pub fn select_page(ui: &mut Ui, current_page: &mut PageType) {
         ui.selectable_value(current_page, PageType::Convert, "格式转换");
     });
 }
-fn model_file_select(ui: &mut Ui, label: &str, file_path: &mut PathBuf) -> Response {
+pub fn model_file_select(ui: &mut Ui, label: &str, file_path: &mut PathBuf) -> Response {
     let (filter_name, filter) = (
         "模型文件",
         &["ckpt", "safetensors", "gguf", "diffusers", "pth", "sft"],
@@ -48,8 +48,7 @@ where
 }
 pub fn drag_value<Num: emath::Numeric>(
     ui: &mut Ui,
-    label: &str,
-    value: &mut Num,
+    (label, value): (&str, &mut Num),
     range: RangeInclusive<Num>,
 ) -> Response {
     ui.horizontal(|ui| {
@@ -112,19 +111,22 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
         model_file_select(ui, "t5xxl 模型", &mut config.t5xxl_path);
         model_file_select(ui, "VAE 模型", &mut config.vae_path);
         model_file_select(ui, "TAESD 模型", &mut config.taesd_path);
-        model_file_select(ui, "Control Net 模型", &mut config.control_net_path);
         model_file_select(ui, "embedding 模型", &mut config.embedding_dir);
         model_file_select(ui, "PhotoMaker 模型", &mut config.stacked_id_embedding_dir);
         model_file_select(ui, "PhotoMaker 输入图片", &mut config.input_id_images_dir);
         model_file_select(ui, "ESRGAN 模型", &mut config.upscale_model_path)
             .on_hover_text("仅支持 RealESRGAN_x4plus_anime_6B");
-        drag_value(ui, "超分辨率次数", &mut config.upscale_repeats, 1..=114514);
+        drag_value(
+            ui,
+            ("超分辨率次数", &mut config.upscale_repeats),
+            1..=114514,
+        );
         select_config_combobox(ui, "权重类型", &mut config.weight_type)
             .on_hover_text("未指定时权重将和模型文件一致");
         folder_select(ui, ("LoRa 路径", &mut config.lora_model_dir));
-        image_file_select(ui, ("Control Net 图像", &mut config.control_net_image));
+        config.control_net_config.show(ui);
         folder_select(ui, ("输出路径", &mut config.output_path));
-        drag_value(ui, "种子", &mut config.sampling.seed, -1..=1145141919810);
+        drag_value(ui, ("种子", &mut config.sampling.seed), -1..=1145141919810);
         ui.horizontal(|ui| {
             ui.label("宽度：");
             ui.add(
@@ -139,10 +141,18 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
                     .speed(64),
             );
         });
-        drag_value(ui, "CFG Scale", &mut config.sampling.cfg_scale, 0.1..=30.0);
-        drag_value(ui, "SLG Scale", &mut config.sampling.slg_scale, 0.1..=30.0)
-            .on_hover_text("仅适用于 DiT 模型（默认值：0） ");
-        drag_value(ui, "步数", &mut config.sampling.steps, 1..=150);
+        drag_value(
+            ui,
+            ("CFG Scale", &mut config.sampling.cfg_scale),
+            0.1..=30.0,
+        );
+        drag_value(
+            ui,
+            ("SLG Scale", &mut config.sampling.slg_scale),
+            0.0..=30.0,
+        )
+        .on_hover_text("仅适用于 DiT 模型（默认值：0） ");
+        drag_value(ui, ("步数", &mut config.sampling.steps), 1..=150);
         ui.horizontal(|ui| {
             let available_thread = std::thread::available_parallelism().unwrap().get() as i32;
             ui.label("线程数");
@@ -152,9 +162,9 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
         select_config_combobox(ui, "采样方法", &mut config.sampling_method);
         select_config_combobox(ui, "RNG 类型", &mut config.rng_type);
 
-        drag_value(ui, "批次数量", &mut config.batch_count, 1..=64);
+        drag_value(ui, ("批次数量", &mut config.batch_count), 1..=64);
         select_config_combobox(ui, "调度器", &mut config.schedule_type);
-        drag_value(ui, "CLIP skip", &mut config.clip_skip, -1..=12);
+        // drag_value(ui, "CLIP skip", &mut config.clip_skip, -1..=12);
         for (value, text) in config.flags.iter_mut() {
             ui.checkbox(value, text);
         }

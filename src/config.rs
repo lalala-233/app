@@ -1,11 +1,16 @@
+mod control_net;
 mod flags;
 mod rng;
+mod sampling;
 mod sampling_method;
 mod schedule;
 mod weight_type;
+
 use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
+use control_net::ControlNetConfig;
 use flags::Flags;
 use rng::RngType;
+use sampling::SamplingConfig;
 use sampling_method::SamplingMethod;
 use schedule::Schedule;
 use serde::{Deserialize, Serialize};
@@ -26,8 +31,7 @@ pub struct Config {
     pub t5xxl_path: PathBuf,
     pub vae_path: PathBuf,
     pub taesd_path: PathBuf,
-    pub control_net_path: PathBuf,
-    pub control_net_image: PathBuf,
+    pub control_net_config: ControlNetConfig,
     pub embedding_dir: PathBuf,
     pub stacked_id_embedding_dir: PathBuf,
     pub input_id_images_dir: PathBuf,
@@ -58,8 +62,7 @@ impl Default for Config {
             t5xxl_path: Default::default(),
             vae_path: PathBuf::new(),
             taesd_path: Default::default(),
-            control_net_path: Default::default(),
-            control_net_image: Default::default(),
+            control_net_config: Default::default(),
             embedding_dir: Default::default(),
             stacked_id_embedding_dir: Default::default(),
             input_id_images_dir: Default::default(),
@@ -80,30 +83,6 @@ impl Default for Config {
     }
 }
 
-/// 采样参数配置
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct SamplingConfig {
-    pub seed: i64,
-    // 不会为 0
-    pub cfg_scale: f32,
-    pub slg_scale: f32,
-    // 大于 0
-    pub steps: u32,
-    pub width: u32,
-    pub height: u32,
-}
-impl Default for SamplingConfig {
-    fn default() -> Self {
-        Self {
-            steps: 20,
-            cfg_scale: 7.0,
-            slg_scale: 0.0,
-            width: 512,
-            height: 512,
-            seed: -1,
-        }
-    }
-}
 /// 页面配置
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct PagesConfig {
@@ -115,7 +94,8 @@ pub struct PagesConfig {
 impl Config {
     pub fn command(&self) -> Command {
         let mut command = Command::new(&self.sdcpp_path);
-        self.args(&mut command);
+        self.add_args(&mut command);
+        self.control_net_config.add_args(&mut command);
         self.flags.add_flags(&mut command);
         match self.current_page {
             PageType::Txt2Img => command.args([
@@ -147,7 +127,7 @@ impl Config {
         };
         command
     }
-    fn args<'a>(&self, command: &'a mut Command) -> &'a mut Command {
+    fn add_args<'a>(&self, command: &'a mut Command) -> &'a mut Command {
         command.args([
             "--threads",
             &self.threads.to_string(),
@@ -163,10 +143,6 @@ impl Config {
             &self.vae_path.to_string_lossy(),
             "--taesd",
             &self.taesd_path.to_string_lossy(),
-            "--control-net",
-            &self.control_net_path.to_string_lossy(),
-            "--control-image",
-            &self.control_net_image.to_string_lossy(),
             "--embd-dir",
             &self.embedding_dir.to_string_lossy(),
             "--stacked-id-embd-dir",
