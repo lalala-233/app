@@ -114,7 +114,6 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
         model_file_select(ui, "embedding 模型", &mut config.embedding_dir);
         model_file_select(ui, "PhotoMaker 模型", &mut config.stacked_id_embedding_dir);
         model_file_select(ui, "PhotoMaker 输入图片", &mut config.input_id_images_dir);
-        ui.checkbox(&mut config.normalize_input, "标准化 PhotoMaker 输入图片");
         model_file_select(ui, "ESRGAN 模型", &mut config.upscale_model_path)
             .on_hover_text("仅支持 RealESRGAN_x4plus_anime_6B");
         drag_value(ui, "超分辨率次数", &mut config.upscale_repeats, 1..=114514);
@@ -156,12 +155,9 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
         drag_value(ui, "批次数量", &mut config.batch_count, 1..=64);
         select_config_combobox(ui, "调度器", &mut config.schedule_type);
         drag_value(ui, "CLIP skip", &mut config.clip_skip, -1..=12);
-        ui.checkbox(&mut config.vae_tiling, "VAE 分块处理");
-        ui.checkbox(&mut config.vae_on_cpu, "VAE 在 CPU");
-        ui.checkbox(&mut config.clip_on_cpu, "CLIP 在 CPU");
-        ui.checkbox(&mut config.diffusion_fa, "扩散模型 flash attention");
-        ui.checkbox(&mut config.control_net_on_cpu, "ControlNet 在 CPU");
-        ui.checkbox(&mut config.canny_preprocess, "Canny 预处理");
+        for (value, text) in config.flags.iter_mut() {
+            ui.checkbox(value, text);
+        }
     });
 
     match config.current_page {

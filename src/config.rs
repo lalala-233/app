@@ -1,6 +1,8 @@
-pub mod scheduler;
-pub mod weight_type;
+mod flags;
+mod scheduler;
+mod weight_type;
 use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
+use flags::Flags;
 use scheduler::Scheduler;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -34,13 +36,7 @@ pub struct Config {
     pub batch_count: u32,
     pub schedule_type: Scheduler,
     pub clip_skip: i32,
-    pub normalize_input: bool,
-    pub vae_tiling: bool,
-    pub vae_on_cpu: bool,
-    pub clip_on_cpu: bool,
-    pub diffusion_fa: bool,
-    pub control_net_on_cpu: bool,
-    pub canny_preprocess: bool,
+    pub flags: Flags,
     pub output_path: PathBuf,
 }
 
@@ -61,7 +57,6 @@ impl Default for Config {
             embedding_dir: Default::default(),
             stacked_id_embedding_dir: Default::default(),
             input_id_images_dir: Default::default(),
-            normalize_input: Default::default(),
             upscale_model_path: Default::default(),
             upscale_repeats: 1,
             weight_type: Default::default(),
@@ -80,12 +75,7 @@ impl Default for Config {
             schedule_type: Default::default(),
             clip_skip: -1,
             pages: Default::default(),
-            vae_tiling: Default::default(),
-            vae_on_cpu: Default::default(),
-            clip_on_cpu: Default::default(),
-            diffusion_fa: Default::default(),
-            control_net_on_cpu: Default::default(),
-            canny_preprocess: Default::default(),
+            flags: Default::default(),
         }
     }
 }
@@ -114,7 +104,7 @@ impl Config {
     pub fn command(&self) -> Command {
         let mut command = Command::new(&self.sdcpp_path);
         self.args(&mut command);
-        self.flags(&mut command);
+        self.flags.add_flags(&mut command);
         match self.current_page {
             PageType::Txt2Img => command.args([
                 "--mode",
@@ -196,29 +186,5 @@ impl Config {
             "--output",
             &self.output_path.to_string_lossy(),
         ])
-    }
-    fn flags<'a>(&self, command: &'a mut Command) -> &'a mut Command {
-        if self.normalize_input {
-            command.arg("--normalize-input");
-        }
-        if self.vae_tiling {
-            command.arg("--vae_tiling");
-        }
-        if self.vae_on_cpu {
-            command.arg("--vae_on_cpu");
-        }
-        if self.clip_on_cpu {
-            command.arg("--clip_on_cpu");
-        }
-        if self.diffusion_fa {
-            command.arg("--diffusion_fa");
-        }
-        if self.control_net_on_cpu {
-            command.arg("--control_net_on_cpu");
-        }
-        if self.canny_preprocess {
-            command.arg("--canny_preprocess");
-        }
-        command
     }
 }

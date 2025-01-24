@@ -51,13 +51,12 @@
 - [] --schedule {discrete, karras, exponential, ays, gits} Denoiser sigma schedule (default: discrete)
 - [] --clip-skip N                      ignore last layers of CLIP network; 1 ignores none, 2 ignores one layer (default: -1)
                                      <= 0 represents unspecified, will be 1 for SD1.x, 2 for SD2.x
-- [] --vae-tiling                       process vae in tiles to reduce memory usage
-- [] --vae-on-cpu                       keep vae in cpu (for low vram)
-- [] --clip-on-cpu                      keep clip in cpu (for low vram)
-- [] --diffusion-fa                     use flash attention in the diffusion model (for low vram)
-                                     Might lower quality, since it implies converting k and v to f16.
+- [x] --vae-tiling                       process vae in tiles to reduce memory usage
+- [x] --vae-on-cpu                       keep vae in cpu (for low vram)
+- [x] --clip-on-cpu                      keep clip in cpu (for low vram)
+- [x] --diffusion-fa                     use flash attention in the diffusion model (for low vram)                                   Might lower quality, since it implies converting k and v to f16.
                                      This might crash if it is not supported by the backend.
-- [] --control-net-cpu                  keep controlnet in cpu (for low vram)
-- [] --canny                            apply canny preprocessor (edge detection)
-- [] --color                            Colors the logging tags according to level
+- [x] --control-net-cpu                  keep controlnet in cpu (for low vram)
+- [x] --canny                            apply canny preprocessor (edge detection)
+- [xx] --color                            Colors the logging tags according to level
 - [xx] -v, --verbose                      print extra info
