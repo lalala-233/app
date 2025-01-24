@@ -16,11 +16,23 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            pkg_install: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev pkg-config
+          - os: macos-latest
+            pkg_install: brew install fontconfig
+          - os: windows-latest
+            pkg_install: 
         rust: [stable]
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+          # 新增系统依赖安装步骤
+    - name: Install system dependencies
+      if: matrix.pkg_install != ''
+      run: ${{ matrix.pkg_install }}
 
     - name: Install Rust (stable)
       uses: actions-rs/toolchain@v1
