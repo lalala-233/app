@@ -14,7 +14,7 @@ pub fn select_page(ui: &mut Ui, current_page: &mut PageType) {
 fn model_file_select(ui: &mut Ui, label: &str, file_path: &mut PathBuf) -> Response {
     let (filter_name, filter) = (
         "模型文件",
-        &["ckpt", "safetensors", "gguf", "diffusers", "pth"],
+        &["ckpt", "safetensors", "gguf", "diffusers", "pth", "sft"],
     );
     file_select(ui, true, (label, file_path), (filter_name, filter))
 }
