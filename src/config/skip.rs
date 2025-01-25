@@ -22,7 +22,7 @@ impl Default for SkipConfig {
     }
 }
 impl SkipConfig {
-    pub fn add_args<'a>(&self, command: &'a mut Command) -> &'a mut Command {
+    pub fn add_args(&self, command: &mut Command) {
         command.args([
             "--clip-skip",
             &self.clip_skip.to_string(),
@@ -32,7 +32,7 @@ impl SkipConfig {
             &self.skip_layer_start.to_string(),
             "--skip-layer-end",
             &self.skip_layer_end.to_string(),
-        ])
+        ]);
     }
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("Skip 相关", |ui| {

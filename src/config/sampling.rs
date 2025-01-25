@@ -27,7 +27,7 @@ impl Default for SamplingConfig {
     }
 }
 impl SamplingConfig {
-    pub fn add_args<'a>(&self, command: &'a mut Command) -> &'a mut Command {
+    pub fn add_args(&self, command: &mut Command) {
         command.args([
             "--seed",
             &self.seed.to_string(),
@@ -41,7 +41,7 @@ impl SamplingConfig {
             &self.cfg_scale.to_string(),
             "--slg-scale",
             &self.slg_scale.to_string(),
-        ])
+        ]);
     }
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("采样参数", |ui| {

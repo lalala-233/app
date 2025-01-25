@@ -6,7 +6,6 @@ pub struct Flags {
     pub vae_on_cpu: bool,
     pub clip_on_cpu: bool,
     pub diffusion_fa: bool,
-    pub control_net_cpu: bool,
     pub canny: bool,
 }
 impl Flags {
@@ -16,12 +15,11 @@ impl Flags {
             (&mut self.vae_on_cpu, "VAE 在 CPU"),
             (&mut self.clip_on_cpu, "CLIP 在 CPU"),
             (&mut self.diffusion_fa, "扩散模型 flash attention"),
-            (&mut self.control_net_cpu, "ControlNet 在 CPU"),
             (&mut self.canny, "Canny 预处理"),
         ]
         .into_iter()
     }
-    pub fn add_flags<'a>(&self, command: &'a mut Command) -> &'a mut Command {
+    pub fn add_flags(&self, command: &mut Command)  {
         if self.vae_tiling {
             command.arg("--vae-tiling");
         }
@@ -34,12 +32,8 @@ impl Flags {
         if self.diffusion_fa {
             command.arg("--diffusion-fa");
         }
-        if self.control_net_cpu {
-            command.arg("--control-net-cpu");
-        }
         if self.canny {
             command.arg("--canny");
         }
-        command
     }
 }

@@ -132,7 +132,7 @@ impl Configs {
         };
         command
     }
-    fn add_args<'a>(&self, command: &'a mut Command) -> &'a mut Command {
+    fn add_args(&self, command: &mut Command)  {
         command.args([
             "--threads",
             &self.threads.to_string(),
@@ -164,6 +164,6 @@ impl Configs {
             self.schedule_type.as_ref(),
             "--output",
             &self.output_path.to_string_lossy(),
-        ])
+        ]);
     }
 }

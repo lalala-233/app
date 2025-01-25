@@ -22,7 +22,7 @@ impl Default for PhotoMakerConfig {
     }
 }
 impl PhotoMakerConfig {
-    pub fn add_args<'a>(&self, command: &'a mut Command) -> &'a mut Command {
+    pub fn add_args(&self, command: &mut Command){
         if self.normalize_input {
             command.arg("--normalize-input");
         }
@@ -33,7 +33,7 @@ impl PhotoMakerConfig {
             &self.input_id_images_dir.to_string_lossy(),
             "--style-ratio",
             &self.style_ratio.to_string(),
-        ])
+        ]);
     }
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("PhotoMaker 相关", |ui| {
