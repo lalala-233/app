@@ -5,11 +5,11 @@ use std::{path::PathBuf, process::Command};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PhotoMakerConfig {
-    pub stacked_id_embedding_dir: PathBuf,
-    pub input_id_images_dir: PathBuf,
+    stacked_id_embedding_dir: PathBuf,
+    input_id_images_dir: PathBuf,
     // 0..=100(%)
-    pub style_ratio: usize,
-    pub normalize_input: bool,
+    style_ratio: usize,
+    normalize_input: bool,
 }
 impl Default for PhotoMakerConfig {
     fn default() -> Self {
@@ -22,7 +22,7 @@ impl Default for PhotoMakerConfig {
     }
 }
 impl PhotoMakerConfig {
-    pub fn add_args(&self, command: &mut Command){
+    pub fn add_args(&self, command: &mut Command) {
         if self.normalize_input {
             command.arg("--normalize-input");
         }

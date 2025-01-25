@@ -123,19 +123,16 @@ impl Configs {
                 "--strength",
                 &self.pages.img2img.strength.to_string(),
             ]),
-            PageType::Convert => command.args([
-                "--mode",
-                PageType::Convert.as_ref(),
-                "--input-img",
-                &self.pages.convert.input_img_path.to_string_lossy(),
-            ]),
+            PageType::Convert => command.args(["--mode", PageType::Convert.as_ref()]),
         };
         command
     }
-    fn add_args(&self, command: &mut Command)  {
+    fn add_args(&self, command: &mut Command) {
         command.args([
             "--threads",
             &self.threads.to_string(),
+            "--type",
+            self.weight_type.as_ref(),
             "--model",
             &self.model_path.to_string_lossy(),
             "--clip_l",

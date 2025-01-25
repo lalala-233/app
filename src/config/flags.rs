@@ -2,11 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::process::Command;
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Flags {
-    pub vae_tiling: bool,
-    pub vae_on_cpu: bool,
-    pub clip_on_cpu: bool,
-    pub diffusion_fa: bool,
-    pub canny: bool,
+    vae_tiling: bool,
+    vae_on_cpu: bool,
+    clip_on_cpu: bool,
+    diffusion_fa: bool,
+    canny: bool,
 }
 impl Flags {
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (&mut bool, &str)> {

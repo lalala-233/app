@@ -5,14 +5,14 @@ use std::process::Command;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SamplingConfig {
-    pub seed: i64,
+    seed: i64,
     // 不会为 0
-    pub cfg_scale: f32,
-    pub slg_scale: f32,
+    cfg_scale: f32,
+    slg_scale: f32,
     // 大于 0
-    pub steps: u32,
-    pub width: u32,
-    pub height: u32,
+    steps: u32,
+    width: u32,
+    height: u32,
 }
 impl Default for SamplingConfig {
     fn default() -> Self {

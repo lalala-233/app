@@ -5,10 +5,10 @@ use std::{path::PathBuf, process::Command};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ControlNetConfig {
-    pub control_net_path: PathBuf,
-    pub control_net_image: PathBuf,
-    pub control_strength: f32,
-    pub control_net_cpu: bool,
+    control_net_path: PathBuf,
+    control_net_image: PathBuf,
+    control_strength: f32,
+    control_net_cpu: bool,
 }
 impl Default for ControlNetConfig {
     fn default() -> Self {
@@ -30,7 +30,7 @@ impl ControlNetConfig {
             &self.control_net_path.to_string_lossy(),
             "--control-image",
             &self.control_net_image.to_string_lossy(),
-            "control-strength",
+            "--control-strength",
             &self.control_strength.to_string(),
         ]);
     }
