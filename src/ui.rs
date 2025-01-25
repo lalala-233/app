@@ -1,4 +1,4 @@
-use crate::{Config, PageType};
+use crate::{Configs, PageType};
 use eframe::{
     egui::{ComboBox, DragValue, Response, TextEdit, Ui},
     emath,
@@ -104,7 +104,7 @@ fn file_select(
     .inner
 }
 
-pub fn set_config(ui: &mut Ui, config: &mut Config) {
+pub fn set_config(ui: &mut Ui, config: &mut Configs) {
     ui.collapsing("通用", |ui| {
         model_file_select(ui, "CLIP-l", &mut config.clip_l_path);
         model_file_select(ui, "CLIP-g", &mut config.clip_g_path);
@@ -112,8 +112,7 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
         model_file_select(ui, "VAE 模型", &mut config.vae_path);
         model_file_select(ui, "TAESD 模型", &mut config.taesd_path);
         model_file_select(ui, "embedding 模型", &mut config.embedding_dir);
-        model_file_select(ui, "PhotoMaker 模型", &mut config.stacked_id_embedding_dir);
-        model_file_select(ui, "PhotoMaker 输入图片", &mut config.input_id_images_dir);
+
         model_file_select(ui, "ESRGAN 模型", &mut config.upscale_model_path)
             .on_hover_text("仅支持 RealESRGAN_x4plus_anime_6B");
         drag_value(
@@ -127,6 +126,7 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
         config.control_net_config.show(ui);
         config.sampling_config.show(ui);
         config.skip_config.show(ui);
+        config.photo_maker_config.show(ui);
         folder_select(ui, ("输出路径", &mut config.output_path));
         ui.horizontal(|ui| {
             let available_thread = std::thread::available_parallelism().unwrap().get() as i32;

@@ -1,4 +1,4 @@
-use crate::{ui::*, Config};
+use crate::{ui::*, Configs};
 use eframe::{
     egui::{self, Context, ScrollArea},
     App,
@@ -16,7 +16,7 @@ use std::{
 };
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct MyApp {
-    config: Config,
+    config: Configs,
 
     #[serde(skip)]
     is_generating: Arc<AtomicBool>,

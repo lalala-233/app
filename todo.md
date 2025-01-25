@@ -37,7 +37,7 @@
 - [x] --skip-layer-end END               SLG disabling point: (default: 0.2)
                                      SLG will be enabled at step int([STEPS]*[START]) and disabled at int([STEPS]*[END])
 - [x] --strength STRENGTH                strength for noising/unnoising (default: 0.75)
-- [] --style-ratio STYLE-RATIO          strength for keeping input identity (default: 20%)
+- [x] --style-ratio STYLE-RATIO          strength for keeping input identity (default: 20%)
 - [x] --control-strength STRENGTH        strength to apply Control Net (default: 0.9)
                                      1.0 corresponds to full destruction of information in init image
 - [x] -H, --height H                     image height, in pixel space (default: 512)
@@ -47,7 +47,7 @@
 - [x] --steps  STEPS                     number of sample steps (default: 20)
 - [x] --rng {std_default, cuda}          RNG (default: cuda)
 - [x] -s SEED, --seed SEED               RNG seed (default: 42, use random seed for < 0)
-- [] -b, --batch-count COUNT            number of images to generate
+- [x] -b, --batch-count COUNT            number of images to generate
 - [x] --schedule {discrete, karras, exponential, ays, gits} Denoiser sigma schedule (default: discrete)
 - [x] --clip-skip N                      ignore last layers of CLIP network; 1 ignores none, 2 ignores one layer (default: -1)
                                      <= 0 represents unspecified, will be 1 for SD1.x, 2 for SD2.x

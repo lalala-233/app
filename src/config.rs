@@ -1,5 +1,6 @@
 mod control_net;
 mod flags;
+mod photo_maker;
 mod rng;
 mod sampling;
 mod sampling_method;
@@ -10,6 +11,7 @@ mod weight_type;
 use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
 use control_net::ControlNetConfig;
 use flags::Flags;
+use photo_maker::PhotoMakerConfig;
 use rng::RngType;
 use sampling::SamplingConfig;
 use sampling_method::SamplingMethod;
@@ -21,7 +23,7 @@ use std::process::Command;
 use weight_type::WeightType;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Config {
+pub struct Configs {
     pub sdcpp_path: PathBuf,
     pub current_page: PageType,
     pub pages: PagesConfig,
@@ -34,9 +36,8 @@ pub struct Config {
     pub vae_path: PathBuf,
     pub taesd_path: PathBuf,
     pub control_net_config: ControlNetConfig,
+    pub photo_maker_config: PhotoMakerConfig,
     pub embedding_dir: PathBuf,
-    pub stacked_id_embedding_dir: PathBuf,
-    pub input_id_images_dir: PathBuf,
     pub sampling_config: SamplingConfig,
     pub upscale_model_path: PathBuf,
     pub upscale_repeats: u32,
@@ -51,7 +52,7 @@ pub struct Config {
     pub output_path: PathBuf,
 }
 
-impl Default for Config {
+impl Default for Configs {
     fn default() -> Self {
         Self {
             current_page: Default::default(),
@@ -59,12 +60,10 @@ impl Default for Config {
             clip_l_path: Default::default(),
             clip_g_path: Default::default(),
             t5xxl_path: Default::default(),
-            vae_path: PathBuf::new(),
+            vae_path: Default::default(),
             taesd_path: Default::default(),
             control_net_config: Default::default(),
             embedding_dir: Default::default(),
-            stacked_id_embedding_dir: Default::default(),
-            input_id_images_dir: Default::default(),
             upscale_model_path: Default::default(),
             weight_type: Default::default(),
             lora_model_dir: Default::default(),
@@ -75,6 +74,7 @@ impl Default for Config {
             pages: Default::default(),
             flags: Default::default(),
             skip_config: Default::default(),
+            photo_maker_config: Default::default(),
             sdcpp_path: PathBuf::from("./sd"),
             model_path: PathBuf::from("model.safetensors"),
             output_path: PathBuf::from("output"),
@@ -93,13 +93,14 @@ pub struct PagesConfig {
     pub convert: ConvertPage,
 }
 
-impl Config {
+impl Configs {
     pub fn command(&self) -> Command {
         let mut command = Command::new(&self.sdcpp_path);
         self.add_args(&mut command);
         self.control_net_config.add_args(&mut command);
         self.skip_config.add_args(&mut command);
         self.sampling_config.add_args(&mut command);
+        self.photo_maker_config.add_args(&mut command);
         self.flags.add_flags(&mut command);
         match self.current_page {
             PageType::Txt2Img => command.args([
@@ -149,10 +150,6 @@ impl Config {
             &self.taesd_path.to_string_lossy(),
             "--embd-dir",
             &self.embedding_dir.to_string_lossy(),
-            "--stacked-id-embd-dir",
-            &self.stacked_id_embedding_dir.to_string_lossy(),
-            "--input-id-images-dir",
-            &self.input_id_images_dir.to_string_lossy(),
             "--upscale-model",
             &self.upscale_model_path.to_string_lossy(),
             "--upscale-repeats",
