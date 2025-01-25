@@ -22,8 +22,7 @@ jobs:
               sudo apt-get update
               sudo apt-get install -y libfontconfig1-dev pkg-config
           - os: macos-latest
-            pkg_install: |
-              brew install fontconfig pkg-config
+            pkg_install:
           - os: windows-latest
             pkg_install: 
 

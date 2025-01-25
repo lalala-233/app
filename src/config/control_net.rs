@@ -35,9 +35,9 @@ impl ControlNetConfig {
             image_file_select(ui, ("Control Net 图像", &mut self.control_net_image));
             drag_value(
                 ui,
-                ("Control Net 图像", &mut self.control_stength),
+                ("Control Net 强度", &mut self.control_stength),
                 0.0..=1.0,
-            ); // Please check if it is too smalls
+            ); // Please check whether the range is too small
         });
     }
 }

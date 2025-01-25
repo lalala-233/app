@@ -125,34 +125,9 @@ pub fn set_config(ui: &mut Ui, config: &mut Config) {
             .on_hover_text("未指定时权重将和模型文件一致");
         folder_select(ui, ("LoRa 路径", &mut config.lora_model_dir));
         config.control_net_config.show(ui);
+        config.sampling_config.show(ui);
+        config.skip_config.show(ui);
         folder_select(ui, ("输出路径", &mut config.output_path));
-        drag_value(ui, ("种子", &mut config.sampling.seed), -1..=1145141919810);
-        ui.horizontal(|ui| {
-            ui.label("宽度：");
-            ui.add(
-                DragValue::new(&mut config.sampling.width)
-                    .range(64..=2048)
-                    .speed(64),
-            );
-            ui.label("高度");
-            ui.add(
-                DragValue::new(&mut config.sampling.height)
-                    .range(64..=2048)
-                    .speed(64),
-            );
-        });
-        drag_value(
-            ui,
-            ("CFG Scale", &mut config.sampling.cfg_scale),
-            0.1..=30.0,
-        );
-        drag_value(
-            ui,
-            ("SLG Scale", &mut config.sampling.slg_scale),
-            0.0..=30.0,
-        )
-        .on_hover_text("仅适用于 DiT 模型（默认值：0） ");
-        drag_value(ui, ("步数", &mut config.sampling.steps), 1..=150);
         ui.horizontal(|ui| {
             let available_thread = std::thread::available_parallelism().unwrap().get() as i32;
             ui.label("线程数");

@@ -4,6 +4,7 @@ mod rng;
 mod sampling;
 mod sampling_method;
 mod schedule;
+mod skip;
 mod weight_type;
 
 use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
@@ -14,6 +15,7 @@ use sampling::SamplingConfig;
 use sampling_method::SamplingMethod;
 use schedule::Schedule;
 use serde::{Deserialize, Serialize};
+use skip::SkipConfig;
 use std::path::PathBuf;
 use std::process::Command;
 use weight_type::WeightType;
@@ -35,7 +37,7 @@ pub struct Config {
     pub embedding_dir: PathBuf,
     pub stacked_id_embedding_dir: PathBuf,
     pub input_id_images_dir: PathBuf,
-    pub sampling: SamplingConfig,
+    pub sampling_config: SamplingConfig,
     pub upscale_model_path: PathBuf,
     pub upscale_repeats: u32,
     pub weight_type: WeightType,
@@ -44,18 +46,15 @@ pub struct Config {
     pub rng_type: RngType,
     pub batch_count: u32,
     pub schedule_type: Schedule,
-    pub clip_skip: i32,
     pub flags: Flags,
+    pub skip_config: SkipConfig,
     pub output_path: PathBuf,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            sdcpp_path: PathBuf::from("./sd"),
-            current_page: PageType::Txt2Img,
-            threads: -1,
-            model_path: PathBuf::from("model.safetensors"),
+            current_page: Default::default(),
             _diffusion_model: Default::default(),
             clip_l_path: Default::default(),
             clip_g_path: Default::default(),
@@ -67,18 +66,21 @@ impl Default for Config {
             stacked_id_embedding_dir: Default::default(),
             input_id_images_dir: Default::default(),
             upscale_model_path: Default::default(),
-            upscale_repeats: 1,
             weight_type: Default::default(),
             lora_model_dir: Default::default(),
-            output_path: PathBuf::from("output"),
-            sampling: Default::default(),
+            sampling_config: Default::default(),
             sampling_method: Default::default(),
             rng_type: Default::default(),
-            batch_count: 1,
             schedule_type: Default::default(),
-            clip_skip: -1,
             pages: Default::default(),
             flags: Default::default(),
+            skip_config: Default::default(),
+            sdcpp_path: PathBuf::from("./sd"),
+            model_path: PathBuf::from("model.safetensors"),
+            output_path: PathBuf::from("output"),
+            threads: -1,
+            upscale_repeats: 1,
+            batch_count: 1,
         }
     }
 }
@@ -96,6 +98,8 @@ impl Config {
         let mut command = Command::new(&self.sdcpp_path);
         self.add_args(&mut command);
         self.control_net_config.add_args(&mut command);
+        self.skip_config.add_args(&mut command);
+        self.sampling_config.add_args(&mut command);
         self.flags.add_flags(&mut command);
         match self.current_page {
             PageType::Txt2Img => command.args([
@@ -153,18 +157,6 @@ impl Config {
             &self.upscale_model_path.to_string_lossy(),
             "--upscale-repeats",
             &self.upscale_repeats.to_string(),
-            "--seed",
-            &self.sampling.seed.to_string(),
-            "--width",
-            &self.sampling.width.to_string(),
-            "--height",
-            &self.sampling.height.to_string(),
-            "--steps",
-            &self.sampling.steps.to_string(),
-            "--cfg-scale",
-            &self.sampling.cfg_scale.to_string(),
-            "--slg-scale",
-            &self.sampling.slg_scale.to_string(),
             "--sampling-method",
             self.sampling_method.as_ref(),
             "--rng",
@@ -173,8 +165,6 @@ impl Config {
             &self.batch_count.to_string(),
             "--schedule",
             self.schedule_type.as_ref(),
-            "--clip-skip",
-            &self.clip_skip.to_string(),
             "--output",
             &self.output_path.to_string_lossy(),
         ])
