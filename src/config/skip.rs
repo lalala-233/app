@@ -47,7 +47,11 @@ impl SkipConfig {
                 ("clip-layer-start", &mut self.skip_layer_start),
                 0.01..=1.00,
             );
-            slider_value(ui, ("clip-skip", &mut self.skip_layer_end), 0.01..=1.00);
+            slider_value(
+                ui,
+                ("skip_layer_end", &mut self.skip_layer_end),
+                0.01..=1.00,
+            );
         });
     }
 }

@@ -1,6 +1,6 @@
 use crate::{Configs, PageType};
 use eframe::{
-    egui::{ComboBox, DragValue, Response, Slider, TextEdit, Ui},
+    egui::{Color32, ComboBox, DragValue, Response, Slider, TextEdit, Ui},
     emath,
 };
 use std::{ops::RangeInclusive, path::PathBuf, str::FromStr};
@@ -80,6 +80,9 @@ fn file_select(
         let mut file_dialog = rfd::FileDialog::new().set_directory("./");
         if is_file {
             file_dialog = file_dialog.add_filter(filter_name, filter);
+            if !pathbuf.as_os_str().is_empty() && !pathbuf.exists() {
+                ui.colored_label(Color32::RED, "文件不存在");
+            }
         }
         match (is_clicked, is_file) {
             (true, true) => {
@@ -93,11 +96,6 @@ fn file_select(
                 }
             }
             _ => (),
-        }
-        if let Some(ext) = pathbuf.extension() {
-            if filter.contains(&ext.to_string_lossy().as_ref()) && pathbuf.is_file() {
-                ui.label("文件存在");
-            }
         }
         response
     })
