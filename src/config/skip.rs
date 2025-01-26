@@ -36,18 +36,18 @@ impl SkipConfig {
     }
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("Skip 相关", |ui| {
-            drag_value(ui, ("clip-skip", &mut self.clip_skip), -1..=114)
+            slider_value(ui, ("clip-skip", &mut self.clip_skip), -1..=114)
                 .on_hover_text("1 ignores none, 2 ignores one layer");
             ui.horizontal(|ui| {
                 ui.label("skip-layers");
                 ui.text_edit_singleline(&mut self.skip_layers);
             });
-            drag_value(
+            slider_value(
                 ui,
                 ("clip-layer-start", &mut self.skip_layer_start),
                 0.01..=1.00,
             );
-            drag_value(ui, ("clip-skip", &mut self.skip_layer_end), 0.01..=1.00);
+            slider_value(ui, ("clip-skip", &mut self.skip_layer_end), 0.01..=1.00);
         });
     }
 }

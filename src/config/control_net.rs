@@ -38,7 +38,7 @@ impl ControlNetConfig {
         ui.collapsing("Control Net 相关", |ui| {
             model_file_select(ui, "Control Net 模型", &mut self.control_net_path);
             image_file_select(ui, ("Control Net 图像", &mut self.control_net_image));
-            drag_value(
+            slider_value(
                 ui,
                 ("Control Net 强度", &mut self.control_strength),
                 0.0..=1.0,

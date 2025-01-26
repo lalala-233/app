@@ -19,7 +19,7 @@ impl Flags {
         ]
         .into_iter()
     }
-    pub fn add_flags(&self, command: &mut Command)  {
+    pub fn add_flags(&self, command: &mut Command) {
         if self.vae_tiling {
             command.arg("--vae-tiling");
         }

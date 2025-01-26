@@ -1,6 +1,6 @@
 use crate::{Configs, PageType};
 use eframe::{
-    egui::{ComboBox, DragValue, Response, TextEdit, Ui},
+    egui::{ComboBox, DragValue, Response, Slider, TextEdit, Ui},
     emath,
 };
 use std::{ops::RangeInclusive, path::PathBuf, str::FromStr};
@@ -46,14 +46,14 @@ where
     })
     .inner
 }
-pub fn drag_value<Num: emath::Numeric>(
+pub fn slider_value<Num: emath::Numeric>(
     ui: &mut Ui,
     (label, value): (&str, &mut Num),
     range: RangeInclusive<Num>,
 ) -> Response {
     ui.horizontal(|ui| {
         ui.label(label);
-        ui.add(DragValue::new(value).range(range))
+        ui.add(Slider::new(value, range))
     })
     .inner
 }
@@ -115,7 +115,7 @@ pub fn set_config(ui: &mut Ui, config: &mut Configs) {
 
         model_file_select(ui, "ESRGAN 模型", &mut config.upscale_model_path)
             .on_hover_text("仅支持 RealESRGAN_x4plus_anime_6B");
-        drag_value(
+        slider_value(
             ui,
             ("超分辨率次数", &mut config.upscale_repeats),
             1..=114514,
@@ -137,7 +137,7 @@ pub fn set_config(ui: &mut Ui, config: &mut Configs) {
         select_config_combobox(ui, "采样方法", &mut config.sampling_method);
         select_config_combobox(ui, "RNG 类型", &mut config.rng_type);
 
-        drag_value(ui, ("批次数量", &mut config.batch_count), 1..=64);
+        slider_value(ui, ("批次数量", &mut config.batch_count), 1..=64);
         select_config_combobox(ui, "调度器", &mut config.schedule_type);
         // drag_value(ui, "CLIP skip", &mut config.clip_skip, -1..=12);
         for (value, text) in config.flags.iter_mut() {
