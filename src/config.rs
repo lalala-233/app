@@ -90,12 +90,19 @@ impl Default for Configs {
 
 impl Configs {
     pub fn show(&mut self, ui: &mut Ui) {
+        file_select(
+            ui,
+            true,
+            ("sdcpp 路径", &mut self.sdcpp_path),
+            Default::default(),
+        );
         model_file_select(ui, "模型", &mut self.model_path);
         self.pages_config.show(ui);
     }
     fn get_add_args(&self) -> impl Iterator<Item = &dyn AddArgs> {
         [
             self as &dyn AddArgs,
+            &self.prompts,
             &self.pages_config,
             &self.control_net_config,
             &self.photo_maker_config,

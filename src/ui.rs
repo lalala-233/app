@@ -55,7 +55,7 @@ pub fn slider_value<Num: emath::Numeric>(
     })
     .inner
 }
-fn file_select(
+pub fn file_select(
     ui: &mut Ui,
     is_file: bool,
     (label_name, pathbuf): (&str, &mut PathBuf),
