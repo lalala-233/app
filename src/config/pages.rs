@@ -1,6 +1,7 @@
 pub mod convert;
 pub mod img2img;
 pub mod txt2img;
+use super::AddArgs;
 use eframe::egui::Ui;
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, VariantArray};
@@ -13,6 +14,11 @@ pub enum PageType {
     Txt2Img,
     Img2Img,
     Convert,
+}
+impl AddArgs for PageType {
+    fn add_args(&self, command: &mut std::process::Command) {
+        command.args(["--mode", self.as_ref()]);
+    }
 }
 impl PageType {
     pub fn select_page(&mut self, ui: &mut Ui) {

@@ -2,6 +2,7 @@ mod control_net;
 mod flags;
 mod pages;
 mod photo_maker;
+mod prompt;
 mod rng;
 mod sampling;
 mod sampling_method;
@@ -14,6 +15,7 @@ use eframe::egui::Ui;
 use flags::Flags;
 use pages::{convert::ConvertPage, img2img::Img2ImgPage, txt2img::Txt2ImgPage, PageType};
 use photo_maker::PhotoMakerConfig;
+use prompt::Prompts;
 use rng::RngType;
 use sampling::SamplingConfig;
 use sampling_method::SamplingMethod;
@@ -37,6 +39,7 @@ pub struct Configs {
     pub schedule_type: Schedule,
     pub flags: Flags,
     pub skip_config: SkipConfig,
+    pub prompts: Prompts,
     pub threads: i32,
     pub model_path: PathBuf,
     pub _diffusion_model: PathBuf, // sdcpp 中支持单独指定 diffusion_model 并外接 VAE 等，不知道直接使用 model 指定是否可以外接，暂不实现
@@ -79,6 +82,7 @@ impl Default for Configs {
             sdcpp_path: Default::default(),
             model_path: Default::default(),
             output_path: Default::default(),
+            prompts: Default::default(),
             threads: -1,
             upscale_repeats: 1,
             batch_count: 1,
@@ -114,15 +118,16 @@ impl Configs {
     fn get_add_args(&self) -> impl Iterator<Item = &dyn AddArgs> {
         [
             self as &dyn AddArgs,
-            &self.control_net_config as &dyn AddArgs,
-            &self.photo_maker_config as &dyn AddArgs,
-            &self.sampling_config as &dyn AddArgs,
-            &self.weight_type as &dyn AddArgs,
-            &self.rng_type as &dyn AddArgs,
-            &self.sampling_method as &dyn AddArgs,
-            &self.schedule_type as &dyn AddArgs,
-            &self.flags as &dyn AddArgs,
-            &self.skip_config as &dyn AddArgs,
+            &self.current_page,
+            &self.control_net_config,
+            &self.photo_maker_config,
+            &self.sampling_config,
+            &self.weight_type,
+            &self.rng_type,
+            &self.sampling_method,
+            &self.schedule_type,
+            &self.flags,
+            &self.skip_config,
         ]
         .into_iter()
     }
@@ -132,29 +137,6 @@ impl Configs {
         for config in configs {
             config.add_args(&mut command);
         }
-        match self.current_page {
-            PageType::Txt2Img => command.args([
-                "--mode",
-                PageType::Txt2Img.as_ref(),
-                "--prompt",
-                &self.pages.txt2img.prompt,
-                "--negative-prompt",
-                &self.pages.txt2img.negative_prompt,
-            ]),
-            PageType::Img2Img => command.args([
-                "--mode",
-                PageType::Img2Img.as_ref(),
-                "--init-img",
-                &self.pages.img2img.init_img_path.to_string_lossy(),
-                "--mask",
-                &self.pages.img2img.mask_img_path.to_string_lossy(),
-                "--guidance",
-                &self.pages.img2img.guidance.to_string(),
-                "--strength",
-                &self.pages.img2img.strength.to_string(),
-            ]),
-            PageType::Convert => command.args(["--mode", PageType::Convert.as_ref()]),
-        };
         command
     }
 }
@@ -165,6 +147,8 @@ impl AddArgs for Configs {
             &self.threads.to_string(),
             "--model",
             &self.model_path.to_string_lossy(),
+            "--lora-model-dir",
+            &self.lora_model_dir.to_string_lossy(),
             "--clip_l",
             &self.clip_l_path.to_string_lossy(),
             "--clip_g",

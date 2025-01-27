@@ -102,6 +102,7 @@ fn file_select(
 
 pub fn set_config(ui: &mut Ui, config: &mut Configs) {
     ui.collapsing("通用", |ui| {
+        config.prompts.show(ui);
         model_file_select(ui, "CLIP-l", &mut config.clip_l_path);
         model_file_select(ui, "CLIP-g", &mut config.clip_g_path);
         model_file_select(ui, "t5xxl 模型", &mut config.t5xxl_path);
