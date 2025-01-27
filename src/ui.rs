@@ -1,4 +1,4 @@
-use crate::{Configs, PageType};
+use crate::Configs;
 use eframe::{
     egui::{Color32, ComboBox, DragValue, Response, Slider, TextEdit, Ui},
     emath,
@@ -139,20 +139,6 @@ pub fn set_config(ui: &mut Ui, config: &mut Configs) {
         for (value, text) in config.flags.iter_mut() {
             ui.checkbox(value, text);
         }
+        config.show(ui);
     });
-
-    match config.current_page {
-        PageType::Txt2Img => {
-            model_file_select(ui, "模型", &mut config.model_path);
-            config.pages.txt2img.show(ui)
-        }
-        PageType::Img2Img => {
-            model_file_select(ui, "模型", &mut config.model_path);
-            config.pages.img2img.show(ui)
-        }
-        PageType::Convert => {
-            model_file_select(ui, "待转换模型", &mut config.model_path);
-            config.pages.convert.show(ui)
-        }
-    }
 }

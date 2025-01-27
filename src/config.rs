@@ -1,5 +1,6 @@
 mod control_net;
 mod flags;
+mod pages;
 mod photo_maker;
 mod rng;
 mod sampling;
@@ -7,9 +8,11 @@ mod sampling_method;
 mod schedule;
 mod skip;
 mod weight_type;
-use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
+use crate::ui::*;
 use control_net::ControlNetConfig;
+use eframe::egui::Ui;
 use flags::Flags;
+use pages::{convert::ConvertPage, img2img::Img2ImgPage, txt2img::Txt2ImgPage, PageType};
 use photo_maker::PhotoMakerConfig;
 use rng::RngType;
 use sampling::SamplingConfig;
@@ -92,6 +95,22 @@ pub struct PagesConfig {
 }
 
 impl Configs {
+    pub fn show(&mut self, ui: &mut Ui) {
+        match self.current_page {
+            PageType::Txt2Img => {
+                model_file_select(ui, "模型", &mut self.model_path);
+                self.pages.txt2img.show(ui)
+            }
+            PageType::Img2Img => {
+                model_file_select(ui, "模型", &mut self.model_path);
+                self.pages.img2img.show(ui)
+            }
+            PageType::Convert => {
+                model_file_select(ui, "待转换模型", &mut self.model_path);
+                self.pages.convert.show(ui)
+            }
+        }
+    }
     fn get_add_args(&self) -> impl Iterator<Item = &dyn AddArgs> {
         [
             self as &dyn AddArgs,
