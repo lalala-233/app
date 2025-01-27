@@ -110,13 +110,6 @@ pub fn set_config(ui: &mut Ui, config: &mut Configs) {
         model_file_select(ui, "TAESD 模型", &mut config.taesd_path);
         model_file_select(ui, "embedding 模型", &mut config.embedding_dir);
 
-        model_file_select(ui, "ESRGAN 模型", &mut config.upscale_model_path)
-            .on_hover_text("仅支持 RealESRGAN_x4plus_anime_6B");
-        slider_value(
-            ui,
-            ("超分辨率次数", &mut config.upscale_repeats),
-            1..=114514,
-        );
         select_config_combobox(ui, "权重类型", &mut config.weight_type)
             .on_hover_text("未指定时权重将和模型文件一致");
         folder_select(ui, "LoRa 路径", &mut config.lora_model_dir);

@@ -108,13 +108,12 @@ impl App for MyApp {
                 ui.separator();
                 set_config(ui, &mut self.config);
                 ui.separator();
-                if ui.button("生成").clicked() && !self.is_generating() {
-                    self.generate_image();
-                }
-
                 if self.is_generating() {
+                    if ui.button("取消").clicked() {};
                     ui.label("生成中...");
                     ui.spinner();
+                } else if ui.button("生成").clicked() {
+                    self.generate_image();
                 }
 
                 if let Ok(result) = self.last_result.try_lock() {

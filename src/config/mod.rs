@@ -1,4 +1,5 @@
 mod control_net;
+mod esrgan;
 mod flags;
 mod pages;
 mod photo_maker;
@@ -12,6 +13,7 @@ mod weight_type;
 use crate::ui::*;
 use control_net::ControlNetConfig;
 use eframe::egui::Ui;
+use esrgan::EsrganConfig;
 use flags::Flags;
 use pages::PagesConfig;
 use photo_maker::PhotoMakerConfig;
@@ -48,8 +50,7 @@ pub struct Configs {
     pub vae_path: PathBuf,
     pub taesd_path: PathBuf,
     pub embedding_dir: PathBuf,
-    pub upscale_model_path: PathBuf,
-    pub upscale_repeats: u32,
+    pub esrgan_config: EsrganConfig,
     pub lora_model_dir: PathBuf,
     pub batch_count: u32,
     pub output_path: PathBuf,
@@ -66,7 +67,7 @@ impl Default for Configs {
             taesd_path: Default::default(),
             control_net_config: Default::default(),
             embedding_dir: Default::default(),
-            upscale_model_path: Default::default(),
+            esrgan_config: Default::default(),
             weight_type: Default::default(),
             lora_model_dir: Default::default(),
             sampling_config: Default::default(),
@@ -82,7 +83,6 @@ impl Default for Configs {
             output_path: Default::default(),
             prompts: Default::default(),
             threads: -1,
-            upscale_repeats: 1,
             batch_count: 1,
         }
     }
@@ -90,6 +90,7 @@ impl Default for Configs {
 
 impl Configs {
     pub fn show(&mut self, ui: &mut Ui) {
+        self.esrgan_config.show(ui);
         file_select(
             ui,
             true,
@@ -103,6 +104,7 @@ impl Configs {
         [
             self as &dyn AddArgs,
             &self.prompts,
+            &self.esrgan_config,
             &self.pages_config,
             &self.control_net_config,
             &self.photo_maker_config,
@@ -146,10 +148,6 @@ impl AddArgs for Configs {
             &self.taesd_path.to_string_lossy(),
             "--embd-dir",
             &self.embedding_dir.to_string_lossy(),
-            "--upscale-model",
-            &self.upscale_model_path.to_string_lossy(),
-            "--upscale-repeats",
-            &self.upscale_repeats.to_string(),
             "--batch-count",
             &self.batch_count.to_string(),
             "--output",
