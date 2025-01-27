@@ -1,6 +1,6 @@
+use super::AddArgs;
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, VariantArray};
-
 #[derive(
     Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, VariantArray, AsRefStr,
 )]
@@ -13,7 +13,11 @@ pub enum Schedule {
     Ays,
     Gits,
 }
-
+impl AddArgs for Schedule {
+    fn add_args(&self, command: &mut std::process::Command) {
+        command.args(["--schedule", self.as_ref()]);
+    }
+}
 #[cfg(test)]
 mod test {
     use super::Schedule;

@@ -1,8 +1,8 @@
+use super::AddArgs;
 use crate::ui::*;
 use eframe::egui::{self, Color32, DragValue};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SamplingConfig {
     seed: String,
@@ -26,8 +26,8 @@ impl Default for SamplingConfig {
         }
     }
 }
-impl SamplingConfig {
-    pub fn add_args(&self, command: &mut Command) {
+impl AddArgs for SamplingConfig {
+    fn add_args(&self, command: &mut Command) {
         command.args([
             "--seed",
             &self.seed,
@@ -43,6 +43,8 @@ impl SamplingConfig {
             &self.slg_scale.to_string(),
         ]);
     }
+}
+impl SamplingConfig {
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("采样参数", |ui| {
             ui.horizontal(|ui| {

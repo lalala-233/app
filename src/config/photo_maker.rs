@@ -1,8 +1,8 @@
+use super::AddArgs;
 use crate::ui::*;
 use eframe::egui;
 use serde::{Deserialize, Serialize};
 use std::{path::PathBuf, process::Command};
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PhotoMakerConfig {
     stacked_id_embedding_dir: PathBuf,
@@ -22,7 +22,17 @@ impl Default for PhotoMakerConfig {
     }
 }
 impl PhotoMakerConfig {
-    pub fn add_args(&self, command: &mut Command) {
+    pub fn show(&mut self, ui: &mut egui::Ui) {
+        ui.collapsing("PhotoMaker 相关", |ui| {
+            model_file_select(ui, "PhotoMaker 模型", &mut self.stacked_id_embedding_dir);
+            model_file_select(ui, "输入图片文件夹", &mut self.input_id_images_dir);
+            slider_value(ui, ("风格比例", &mut self.style_ratio), 0..=100);
+            ui.checkbox(&mut self.normalize_input, "归一化输入");
+        });
+    }
+}
+impl AddArgs for PhotoMakerConfig {
+    fn add_args(&self, command: &mut Command) {
         if self.normalize_input {
             command.arg("--normalize-input");
         }
@@ -34,13 +44,5 @@ impl PhotoMakerConfig {
             "--style-ratio",
             &self.style_ratio.to_string(),
         ]);
-    }
-    pub fn show(&mut self, ui: &mut egui::Ui) {
-        ui.collapsing("PhotoMaker 相关", |ui| {
-            model_file_select(ui, "PhotoMaker 模型", &mut self.stacked_id_embedding_dir);
-            model_file_select(ui, "输入图片文件夹", &mut self.input_id_images_dir);
-            slider_value(ui, ("风格比例", &mut self.style_ratio), 0..=100);
-            ui.checkbox(&mut self.normalize_input, "归一化输入");
-        });
     }
 }

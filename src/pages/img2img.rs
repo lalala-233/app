@@ -2,7 +2,6 @@ use crate::ui::*;
 use eframe::egui;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct Img2ImgPage {
     pub init_img_path: PathBuf,

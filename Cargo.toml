@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.3.5"
+version = "0.3.7"
 edition = "2021"
 
 [dependencies]
@@ -11,3 +11,4 @@ log = "0.4"
 rfd = "0.15"
 env_logger = "0.11"
 strum = { version = "0.26", features = ["derive"] }
+regex = "1.0"

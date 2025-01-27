@@ -1,3 +1,4 @@
+use super::AddArgs;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -19,7 +20,9 @@ impl Flags {
         ]
         .into_iter()
     }
-    pub fn add_flags(&self, command: &mut Command) {
+}
+impl AddArgs for Flags {
+    fn add_args(&self, command: &mut Command) {
         if self.vae_tiling {
             command.arg("--vae-tiling");
         }

@@ -12,11 +12,15 @@ pub fn select_page(ui: &mut Ui, current_page: &mut PageType) {
     });
 }
 pub fn model_file_select(ui: &mut Ui, label: &str, file_path: &mut PathBuf) -> Response {
-    let (filter_name, filter) = (
-        "模型文件",
-        &["ckpt", "safetensors", "gguf", "diffusers", "pth", "sft"],
-    );
-    file_select(ui, true, (label, file_path), (filter_name, filter))
+    file_select(
+        ui,
+        true,
+        (label, file_path),
+        (
+            "模型文件",
+            &["ckpt", "safetensors", "gguf", "diffusers", "pth", "sft"],
+        ),
+    )
 }
 fn folder_select(ui: &mut Ui, (label, dir_path): (&str, &mut PathBuf)) -> Response {
     file_select(ui, false, (label, dir_path), Default::default())

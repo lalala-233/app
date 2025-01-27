@@ -1,3 +1,4 @@
+use super::AddArgs;
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, VariantArray};
 #[derive(
@@ -37,6 +38,16 @@ pub enum WeightType {
     Bf16,
     TQ1_0,
     TQ2_0,
+}
+impl AddArgs for WeightType {
+    fn add_args(&self, command: &mut std::process::Command) {
+        match self {
+            Self::Default => (),
+            _ => {
+                command.args(["--type", self.as_ref()]);
+            }
+        }
+    }
 }
 #[cfg(test)]
 mod test {

@@ -231,12 +231,13 @@ dependencies = [
 
 [[package]]
 name = "app"
-version = "0.3.5"
+version = "0.3.7"
 dependencies = [
  "eframe",
  "env_logger",
  "font-kit",
  "log",
+ "regex",
  "rfd",
  "serde",
  "strum",

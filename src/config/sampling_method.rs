@@ -1,6 +1,6 @@
+use super::AddArgs;
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, VariantArray};
-
 #[derive(
     Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, VariantArray, AsRefStr,
 )]
@@ -21,6 +21,11 @@ pub enum SamplingMethod {
     Ipndm,
     IpndmV,
     Lcm,
+}
+impl AddArgs for SamplingMethod {
+    fn add_args(&self, command: &mut std::process::Command) {
+        command.args(["--sampling-method", self.as_ref()]);
+    }
 }
 #[cfg(test)]
 mod test {

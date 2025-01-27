@@ -7,7 +7,6 @@ mod sampling_method;
 mod schedule;
 mod skip;
 mod weight_type;
-
 use crate::{ConvertPage, Img2ImgPage, PageType, Txt2ImgPage};
 use control_net::ControlNetConfig;
 use flags::Flags;
@@ -21,12 +20,20 @@ use skip::SkipConfig;
 use std::path::PathBuf;
 use std::process::Command;
 use weight_type::WeightType;
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Configs {
     pub sdcpp_path: PathBuf,
     pub current_page: PageType,
     pub pages: PagesConfig,
+    pub control_net_config: ControlNetConfig,
+    pub photo_maker_config: PhotoMakerConfig,
+    pub sampling_config: SamplingConfig,
+    pub weight_type: WeightType,
+    pub rng_type: RngType,
+    pub sampling_method: SamplingMethod,
+    pub schedule_type: Schedule,
+    pub flags: Flags,
+    pub skip_config: SkipConfig,
     pub threads: i32,
     pub model_path: PathBuf,
     pub _diffusion_model: PathBuf, // sdcpp 中支持单独指定 diffusion_model 并外接 VAE 等，不知道直接使用 model 指定是否可以外接，暂不实现
@@ -35,20 +42,11 @@ pub struct Configs {
     pub t5xxl_path: PathBuf,
     pub vae_path: PathBuf,
     pub taesd_path: PathBuf,
-    pub control_net_config: ControlNetConfig,
-    pub photo_maker_config: PhotoMakerConfig,
     pub embedding_dir: PathBuf,
-    pub sampling_config: SamplingConfig,
     pub upscale_model_path: PathBuf,
     pub upscale_repeats: u32,
-    pub weight_type: WeightType,
     pub lora_model_dir: PathBuf,
-    pub sampling_method: SamplingMethod,
-    pub rng_type: RngType,
     pub batch_count: u32,
-    pub schedule_type: Schedule,
-    pub flags: Flags,
-    pub skip_config: SkipConfig,
     pub output_path: PathBuf,
 }
 
@@ -75,9 +73,9 @@ impl Default for Configs {
             flags: Default::default(),
             skip_config: Default::default(),
             photo_maker_config: Default::default(),
-            sdcpp_path: PathBuf::from("./sd"),
-            model_path: PathBuf::from("model.safetensors"),
-            output_path: PathBuf::from("output"),
+            sdcpp_path: Default::default(),
+            model_path: Default::default(),
+            output_path: Default::default(),
             threads: -1,
             upscale_repeats: 1,
             batch_count: 1,
@@ -94,14 +92,27 @@ pub struct PagesConfig {
 }
 
 impl Configs {
+    fn get_add_args(&self) -> impl Iterator<Item = &dyn AddArgs> {
+        [
+            self as &dyn AddArgs,
+            &self.control_net_config as &dyn AddArgs,
+            &self.photo_maker_config as &dyn AddArgs,
+            &self.sampling_config as &dyn AddArgs,
+            &self.weight_type as &dyn AddArgs,
+            &self.rng_type as &dyn AddArgs,
+            &self.sampling_method as &dyn AddArgs,
+            &self.schedule_type as &dyn AddArgs,
+            &self.flags as &dyn AddArgs,
+            &self.skip_config as &dyn AddArgs,
+        ]
+        .into_iter()
+    }
     pub fn command(&self) -> Command {
         let mut command = Command::new(&self.sdcpp_path);
-        self.add_args(&mut command);
-        self.control_net_config.add_args(&mut command);
-        self.skip_config.add_args(&mut command);
-        self.sampling_config.add_args(&mut command);
-        self.photo_maker_config.add_args(&mut command);
-        self.flags.add_flags(&mut command);
+        let configs = self.get_add_args();
+        for config in configs {
+            config.add_args(&mut command);
+        }
         match self.current_page {
             PageType::Txt2Img => command.args([
                 "--mode",
@@ -127,12 +138,12 @@ impl Configs {
         };
         command
     }
+}
+impl AddArgs for Configs {
     fn add_args(&self, command: &mut Command) {
         command.args([
             "--threads",
             &self.threads.to_string(),
-            "--type",
-            self.weight_type.as_ref(),
             "--model",
             &self.model_path.to_string_lossy(),
             "--clip_l",
@@ -151,16 +162,14 @@ impl Configs {
             &self.upscale_model_path.to_string_lossy(),
             "--upscale-repeats",
             &self.upscale_repeats.to_string(),
-            "--sampling-method",
-            self.sampling_method.as_ref(),
-            "--rng",
-            self.rng_type.as_ref(),
             "--batch-count",
             &self.batch_count.to_string(),
-            "--schedule",
-            self.schedule_type.as_ref(),
             "--output",
             &self.output_path.to_string_lossy(),
         ]);
     }
+}
+
+trait AddArgs {
+    fn add_args(&self, command: &mut Command);
 }

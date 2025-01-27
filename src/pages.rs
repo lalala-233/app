@@ -13,6 +13,7 @@ pub enum PageType {
     Img2Img,
     Convert,
 }
+
 #[cfg(test)]
 mod test {
     use super::PageType;

@@ -1,9 +1,9 @@
 // because I don't know the skip parameter, so there may be something wrong.
+use super::AddArgs;
 use crate::ui::*;
 use eframe::egui;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SkipConfig {
     clip_skip: i32,
@@ -21,8 +21,8 @@ impl Default for SkipConfig {
         }
     }
 }
-impl SkipConfig {
-    pub fn add_args(&self, command: &mut Command) {
+impl AddArgs for SkipConfig {
+    fn add_args(&self, command: &mut Command) {
         command.args([
             "--clip-skip",
             &self.clip_skip.to_string(),
@@ -34,6 +34,8 @@ impl SkipConfig {
             &self.skip_layer_end.to_string(),
         ]);
     }
+}
+impl SkipConfig {
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("Skip 相关", |ui| {
             slider_value(ui, ("clip-skip", &mut self.clip_skip), -1..=114)
