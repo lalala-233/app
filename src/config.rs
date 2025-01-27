@@ -13,7 +13,7 @@ use crate::ui::*;
 use control_net::ControlNetConfig;
 use eframe::egui::Ui;
 use flags::Flags;
-use pages::{convert::ConvertPage, img2img::Img2ImgPage, txt2img::Txt2ImgPage, PageType};
+use pages::PagesConfig;
 use photo_maker::PhotoMakerConfig;
 use prompt::Prompts;
 use rng::RngType;
@@ -28,8 +28,7 @@ use weight_type::WeightType;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Configs {
     pub sdcpp_path: PathBuf,
-    pub current_page: PageType,
-    pub pages: PagesConfig,
+    pub pages_config: PagesConfig,
     pub control_net_config: ControlNetConfig,
     pub photo_maker_config: PhotoMakerConfig,
     pub sampling_config: SamplingConfig,
@@ -59,7 +58,6 @@ pub struct Configs {
 impl Default for Configs {
     fn default() -> Self {
         Self {
-            current_page: Default::default(),
             _diffusion_model: Default::default(),
             clip_l_path: Default::default(),
             clip_g_path: Default::default(),
@@ -75,7 +73,7 @@ impl Default for Configs {
             sampling_method: Default::default(),
             rng_type: Default::default(),
             schedule_type: Default::default(),
-            pages: Default::default(),
+            pages_config: Default::default(),
             flags: Default::default(),
             skip_config: Default::default(),
             photo_maker_config: Default::default(),
@@ -90,35 +88,15 @@ impl Default for Configs {
     }
 }
 
-/// 页面配置
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct PagesConfig {
-    pub txt2img: Txt2ImgPage,
-    pub img2img: Img2ImgPage,
-    pub convert: ConvertPage,
-}
-
 impl Configs {
     pub fn show(&mut self, ui: &mut Ui) {
-        match self.current_page {
-            PageType::Txt2Img => {
-                model_file_select(ui, "模型", &mut self.model_path);
-                self.pages.txt2img.show(ui)
-            }
-            PageType::Img2Img => {
-                model_file_select(ui, "模型", &mut self.model_path);
-                self.pages.img2img.show(ui)
-            }
-            PageType::Convert => {
-                model_file_select(ui, "待转换模型", &mut self.model_path);
-                self.pages.convert.show(ui)
-            }
-        }
+        model_file_select(ui, "模型", &mut self.model_path);
+        self.pages_config.show(ui);
     }
     fn get_add_args(&self) -> impl Iterator<Item = &dyn AddArgs> {
         [
             self as &dyn AddArgs,
-            &self.current_page,
+            &self.pages_config,
             &self.control_net_config,
             &self.photo_maker_config,
             &self.sampling_config,

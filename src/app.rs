@@ -104,7 +104,7 @@ impl App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ScrollArea::vertical().show(ui, |ui| {
-                self.config.current_page.select_page(ui);
+                self.config.pages_config.select_page(ui);
                 ui.separator();
                 set_config(ui, &mut self.config);
                 ui.separator();

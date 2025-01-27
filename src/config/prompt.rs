@@ -3,8 +3,8 @@ use eframe::egui;
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct Prompts {
-    pub prompt: String,
-    pub negative_prompt: String,
+    prompt: String,
+    negative_prompt: String,
 }
 impl AddArgs for Prompts {
     fn add_args(&self, command: &mut std::process::Command) {
