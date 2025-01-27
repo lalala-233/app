@@ -6,7 +6,7 @@ use std::path::PathBuf;
 pub struct Img2ImgPage {
     init_img_path: PathBuf,
     mask_img_path: PathBuf,
-    // 大于 0，但不知道最大值是多少
+    // 大于 0，但不知道最大值是多少，故限制为 10.0
     guidance: f32,
     strength: f32,
 }

@@ -19,6 +19,7 @@ jobs:
         include:
           - os: ubuntu-latest
             pkg_install: |
+              sudo apt-get update
               sudo apt-get install -y libfontconfig1-dev pkg-config
           - os: macos-latest
             pkg_install:
