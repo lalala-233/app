@@ -16,10 +16,10 @@ pub fn model_file_select(ui: &mut Ui, label: &str, file_path: &mut PathBuf) -> R
         ),
     )
 }
-fn folder_select(ui: &mut Ui, (label, dir_path): (&str, &mut PathBuf)) -> Response {
+pub fn folder_select(ui: &mut Ui, label: &str, dir_path: &mut PathBuf) -> Response {
     file_select(ui, false, (label, dir_path), Default::default())
 }
-pub fn image_file_select(ui: &mut Ui, (label, dir_path): (&str, &mut PathBuf)) -> Response {
+pub fn image_file_select(ui: &mut Ui, label: &str, dir_path: &mut PathBuf) -> Response {
     file_select(
         ui,
         true,
@@ -119,12 +119,12 @@ pub fn set_config(ui: &mut Ui, config: &mut Configs) {
         );
         select_config_combobox(ui, "权重类型", &mut config.weight_type)
             .on_hover_text("未指定时权重将和模型文件一致");
-        folder_select(ui, ("LoRa 路径", &mut config.lora_model_dir));
+        folder_select(ui, "LoRa 路径", &mut config.lora_model_dir);
         config.control_net_config.show(ui);
         config.sampling_config.show(ui);
         config.skip_config.show(ui);
         config.photo_maker_config.show(ui);
-        folder_select(ui, ("输出路径", &mut config.output_path));
+        folder_select(ui, "输出路径", &mut config.output_path);
         ui.horizontal(|ui| {
             let available_thread = std::thread::available_parallelism().unwrap().get() as i32;
             ui.label("线程数");

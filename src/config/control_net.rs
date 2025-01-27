@@ -39,7 +39,7 @@ impl ControlNetConfig {
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("Control Net 相关", |ui| {
             model_file_select(ui, "Control Net 模型", &mut self.control_net_path);
-            image_file_select(ui, ("Control Net 图像", &mut self.control_net_image));
+            image_file_select(ui, "Control Net 图像", &mut self.control_net_image);
             slider_value(
                 ui,
                 ("Control Net 强度", &mut self.control_strength),
