@@ -68,10 +68,13 @@ impl MyApp {
         self.generation_progress = 0.0;
         let is_generating = Arc::clone(&self.is_generating);
         is_generating.store(true, Relaxed);
+
         let last_result = self.last_result.clone();
         let last_error = self.last_error.clone();
+
         let mut command = self.config.command();
         info!("Args: {:?}", command.get_args());
+
         thread::spawn(move || {
             let output = command.output();
             is_generating.store(false, Relaxed);
@@ -90,7 +93,7 @@ impl MyApp {
                     *error = e.to_string();
                 }
             };
-            sleep(Duration::from_secs(5));
+            sleep(Duration::from_secs(10));
             last_result.lock().unwrap().clear();
             last_error.lock().unwrap().clear();
         });
@@ -101,7 +104,7 @@ impl App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ScrollArea::vertical().show(ui, |ui| {
-                select_page(ui, &mut self.config.current_page);
+                self.config.current_page.select_page(ui);
                 ui.separator();
                 set_config(ui, &mut self.config);
                 ui.separator();

@@ -1,6 +1,7 @@
 pub mod convert;
 pub mod img2img;
 pub mod txt2img;
+use eframe::egui::Ui;
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, VariantArray};
 #[derive(
@@ -13,7 +14,15 @@ pub enum PageType {
     Img2Img,
     Convert,
 }
-
+impl PageType {
+    pub fn select_page(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.selectable_value(self, PageType::Txt2Img, "文生图");
+            ui.selectable_value(self, PageType::Img2Img, "图生图");
+            ui.selectable_value(self, PageType::Convert, "格式转换");
+        });
+    }
+}
 #[cfg(test)]
 mod test {
     use super::PageType;

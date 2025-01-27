@@ -4,13 +4,7 @@ use eframe::{
     emath,
 };
 use std::{ops::RangeInclusive, path::PathBuf, str::FromStr};
-pub fn select_page(ui: &mut Ui, current_page: &mut PageType) {
-    ui.horizontal(|ui| {
-        ui.selectable_value(current_page, PageType::Txt2Img, "文生图");
-        ui.selectable_value(current_page, PageType::Img2Img, "图生图");
-        ui.selectable_value(current_page, PageType::Convert, "格式转换");
-    });
-}
+
 pub fn model_file_select(ui: &mut Ui, label: &str, file_path: &mut PathBuf) -> Response {
     file_select(
         ui,
