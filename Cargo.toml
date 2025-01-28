@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2021"
 
 [dependencies]
@@ -12,3 +12,10 @@ rfd = "0.15"
 env_logger = "0.11"
 strum = { version = "0.26", features = ["derive"] }
 regex = "1.0"
+
+# Enable a large amount of optimization in the dev profile for dependencies.
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+incremental = true # 启用增量编译

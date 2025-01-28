@@ -8,7 +8,7 @@ pub struct PhotoMakerConfig {
     stacked_id_embedding_dir: PathBuf,
     input_id_images_dir: PathBuf,
     // 0..=100(%)
-    style_ratio: usize,
+    style_ratio: u32,
     normalize_input: bool,
 }
 impl Default for PhotoMakerConfig {

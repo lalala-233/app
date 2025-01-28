@@ -5,10 +5,13 @@ use eframe::{
 };
 use font_kit::source::SystemSource;
 use log::info;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::{
+    io::Read,
+    process::Stdio,
     sync::{
-        atomic::{AtomicBool, Ordering::Relaxed},
+        atomic::{AtomicBool, AtomicU32, Ordering::Relaxed},
         Arc, Mutex,
     },
     thread::{self, sleep},
@@ -21,7 +24,7 @@ pub struct MyApp {
     #[serde(skip)]
     is_generating: Arc<AtomicBool>,
     #[serde(skip)]
-    generation_progress: f32,
+    progress: Arc<(AtomicU32, AtomicU32)>,
     #[serde(skip)]
     last_result: Arc<Mutex<String>>,
     #[serde(skip)]
@@ -32,7 +35,9 @@ impl MyApp {
     fn is_generating(&self) -> bool {
         self.is_generating.load(Relaxed)
     }
-
+    fn get_progress(&self) -> (u32, u32) {
+        (self.progress.0.load(Relaxed), self.progress.1.load(Relaxed))
+    }
     fn set_fonts(ctx: &Context) {
         let system_source = SystemSource::new();
         if let Ok(family) = system_source.select_family_by_name("sans-serif") {
@@ -65,37 +70,75 @@ impl MyApp {
         Self::default()
     }
     fn generate_image(&mut self) {
-        self.generation_progress = 0.0;
-        let is_generating = Arc::clone(&self.is_generating);
-        is_generating.store(true, Relaxed);
-
+        let is_generating = self.is_generating.clone();
         let last_result = self.last_result.clone();
         let last_error = self.last_error.clone();
+        let progress = self.progress.clone();
 
+        is_generating.store(true, Relaxed);
         let mut command = self.config.command();
         info!("Args: {:?}", command.get_args());
 
         thread::spawn(move || {
-            let output = command.output();
-            is_generating.store(false, Relaxed);
-            match output {
-                Ok(output) => {
-                    if output.status.success() {
-                        let mut result = last_result.lock().unwrap();
-                        *result = "图片生成成功！".to_string();
-                    } else {
-                        let mut error = last_error.lock().unwrap();
-                        *error = String::from_utf8_lossy(&output.stderr).to_string();
-                    }
-                }
+            let mut child = match command
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+            {
+                Ok(c) => c,
                 Err(e) => {
-                    let mut error = last_error.lock().unwrap();
-                    *error = e.to_string();
+                    is_generating.store(false, Relaxed);
+                    *last_error.lock().unwrap() = e.to_string();
+                    return;
                 }
             };
+            let stdout = &mut child.stdout.take().unwrap();
+            let stderr = &mut child.stderr.take().unwrap();
+
+            let re = Regex::new(r"(\d+)/(\d+)").unwrap();
+            loop {
+                if let Some(s) = detect_progress(stdout) {
+                    if let Some(caps) = re.captures(&s) {
+                        progress.0.store(caps[1].parse::<u32>().unwrap(), Relaxed);
+                        progress.1.store(caps[2].parse::<u32>().unwrap(), Relaxed);
+                    }
+                }
+                match child.try_wait() {
+                    Ok(Some(status)) => {
+                        if status.success() {
+                            let mut result = last_result.lock().unwrap();
+                            *result = "图片生成成功！".to_string();
+                        } else {
+                            let mut error = last_error.lock().unwrap();
+                            let _ = stderr.read_to_string(&mut error);
+                        }
+                        break;
+                    }
+                    Ok(None) if !is_generating.load(Relaxed) => {
+                        // 取消生成
+                        let _ = child.kill().map_err(|e| {
+                            let mut error = last_error.lock().unwrap();
+                            *error = e.to_string();
+                        });
+                        break;
+                    }
+                    Ok(None) => {
+                        // 添加短暂休眠减少 CPU 占用
+                        sleep(Duration::from_millis(100));
+                    }
+                    Err(e) => {
+                        let mut error = last_error.lock().unwrap();
+                        *error = e.to_string();
+                        break;
+                    }
+                }
+            }
+
             sleep(Duration::from_secs(10));
             last_result.lock().unwrap().clear();
             last_error.lock().unwrap().clear();
+            progress.0.store(0, Relaxed);
+            progress.1.store(0, Relaxed);
         });
     }
 }
@@ -109,9 +152,14 @@ impl App for MyApp {
                 set_config(ui, &mut self.config);
                 ui.separator();
                 if self.is_generating() {
-                    if ui.button("取消").clicked() {};
+                    if ui.button("取消").clicked() {
+                        self.is_generating.store(false, Relaxed);
+                    };
                     ui.label("生成中...");
-                    ui.spinner();
+                    let (step, steps) = self.get_progress();
+                    if steps != 0 {
+                        ui.label(format!("{}/{}", step, steps));
+                    }
                 } else if ui.button("生成").clicked() {
                     self.generate_image();
                 }
@@ -127,12 +175,27 @@ impl App for MyApp {
                         ui.colored_label(egui::Color32::RED, error.as_str());
                     }
                 }
+                egui::widgets::global_theme_preference_switch(ui)
             });
-            ui.horizontal(egui::widgets::global_theme_preference_switch)
         });
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, eframe::APP_KEY, self);
+    }
+}
+
+fn detect_progress<R: Read>(reader: &mut R) -> Option<String> {
+    let mut buf = [0u8; 1024];
+    loop {
+        let bytes_read = reader.read(&mut buf).unwrap_or_default();
+        if bytes_read == 0 {
+            return None;
+        }
+
+        let buf = &buf[..bytes_read];
+        if !buf.contains(&b'\n') {
+            return Some(String::from_utf8(buf.to_vec()).unwrap_or_default());
+        }
     }
 }
