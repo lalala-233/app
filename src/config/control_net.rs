@@ -1,12 +1,12 @@
 use super::AddArgs;
-use crate::ui::*;
+use crate::{ui::*, BigPathBuf};
 use eframe::egui;
 use serde::{Deserialize, Serialize};
-use std::{path::PathBuf, process::Command};
+use std::process::Command;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ControlNetConfig {
-    control_net_path: PathBuf,
-    control_net_image: PathBuf,
+    control_net_path: BigPathBuf,
+    control_net_image: BigPathBuf,
     control_strength: f32,
     control_net_cpu: bool,
 }
@@ -38,13 +38,13 @@ impl AddArgs for ControlNetConfig {
 impl ControlNetConfig {
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("Control Net 相关", |ui| {
-            model_file_select(ui, "Control Net 模型", &mut self.control_net_path);
-            image_file_select(ui, "Control Net 图像", &mut self.control_net_image);
+            self.control_net_path.select_model(ui, "Control Net 模型");
+            self.control_net_image.select_image(ui, "Control Net 图像");
             slider_value(
                 ui,
                 ("Control Net 强度", &mut self.control_strength),
                 0.0..=1.0,
-            ); // Please check whether the range is too small
+            ); // Please tell me whether the range is too small
 
             ui.checkbox(&mut self.control_net_cpu, "ControlNet 在 CPU")
         });

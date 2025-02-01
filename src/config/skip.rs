@@ -14,7 +14,7 @@ pub struct SkipConfig {
 impl Default for SkipConfig {
     fn default() -> Self {
         Self {
-            clip_skip: -1, // 1 ignores none, 2 ignores one layer
+            clip_skip: -1,
             skip_layers: "[7, 8, 9]".to_string(),
             skip_layer_start: 0.01,
             skip_layer_end: 0.20,

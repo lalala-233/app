@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, VariantArray};
 use txt2img::Txt2ImgPage;
 
-/// 页面配置
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct PagesConfig {
     current_page: PageType,

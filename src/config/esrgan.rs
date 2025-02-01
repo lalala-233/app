@@ -1,11 +1,10 @@
 use super::AddArgs;
-use crate::ui::*;
+use crate::{ui::*, BigPathBuf};
 use eframe::egui;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EsrganConfig {
-    upscale_model_path: PathBuf,
+    upscale_model_path: BigPathBuf,
     upscale_repeats: u32,
 }
 impl AddArgs for EsrganConfig {
@@ -29,7 +28,8 @@ impl Default for EsrganConfig {
 impl EsrganConfig {
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("Upscale", |ui| {
-            model_file_select(ui, "ESRGAN 模型", &mut self.upscale_model_path)
+            self.upscale_model_path
+                .select_model(ui, "ESRGAN 模型")
                 .on_hover_text("仅支持 RealESRGAN_x4plus_anime_6B");
             slider_value(ui, ("超分辨率次数", &mut self.upscale_repeats), 1..=16);
         });

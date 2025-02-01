@@ -20,7 +20,6 @@ use std::{
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct MyApp {
     config: Configs,
-
     #[serde(skip)]
     is_generating: Arc<AtomicBool>,
     #[serde(skip)]

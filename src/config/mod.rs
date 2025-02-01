@@ -10,9 +10,9 @@ mod sampling_method;
 mod schedule;
 mod skip;
 mod weight_type;
-use crate::ui::*;
+use crate::BigPathBuf;
 use control_net::ControlNetConfig;
-use eframe::egui::Ui;
+use eframe::egui::{Color32, Response, Ui};
 use esrgan::EsrganConfig;
 use flags::Flags;
 use pages::PagesConfig;
@@ -24,8 +24,7 @@ use sampling_method::SamplingMethod;
 use schedule::Schedule;
 use serde::{Deserialize, Serialize};
 use skip::SkipConfig;
-use std::path::PathBuf;
-use std::process::Command;
+use std::{path::PathBuf, process::Command, str::FromStr};
 use weight_type::WeightType;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Configs {
@@ -41,19 +40,19 @@ pub struct Configs {
     pub flags: Flags,
     pub skip_config: SkipConfig,
     pub prompts: Prompts,
-    pub threads: i32,
-    pub model_path: PathBuf,
-    pub _diffusion_model: PathBuf, // sdcpp 中支持单独指定 diffusion_model 并外接 VAE 等，不知道直接使用 model 指定是否可以外接，暂不实现
-    pub clip_l_path: PathBuf,
-    pub clip_g_path: PathBuf,
-    pub t5xxl_path: PathBuf,
-    pub vae_path: PathBuf,
-    pub taesd_path: PathBuf,
-    pub embedding_dir: PathBuf,
     pub esrgan_config: EsrganConfig,
-    pub lora_model_dir: PathBuf,
+    pub threads: i32,
+    pub model_path: BigPathBuf,
+    pub _diffusion_model: BigPathBuf, // sdcpp 中支持单独指定 diffusion_model 并外接 VAE 等，不知道直接使用 model 指定是否可以外接，暂不实现
+    pub clip_l_path: BigPathBuf,
+    pub clip_g_path: BigPathBuf,
+    pub t5xxl_path: BigPathBuf,
+    pub vae_path: BigPathBuf,
+    pub taesd_path: BigPathBuf,
+    pub embedding_dir: BigPathBuf,
+    pub lora_model_dir: BigPathBuf,
     pub batch_count: u32,
-    pub output_path: PathBuf,
+    pub output_path: BigPathBuf,
 }
 
 impl Default for Configs {
@@ -88,16 +87,32 @@ impl Default for Configs {
     }
 }
 
+fn file_select(ui: &mut Ui, label_name: &str, pathbuf: &mut PathBuf) -> Response {
+    ui.horizontal(|ui| {
+        ui.label(label_name);
+        let path_str = &mut pathbuf.to_string_lossy();
+        let response = ui.text_edit_singleline(path_str);
+        if response.changed() {
+            *pathbuf = PathBuf::from_str(path_str).unwrap_or_default()
+        }
+        if ui.button("选择...").clicked() {
+            if let Some(path) = rfd::FileDialog::new().set_directory("./").pick_file() {
+                *pathbuf = path;
+            }
+        }
+        if !pathbuf.as_os_str().is_empty() && !pathbuf.exists() {
+            ui.colored_label(Color32::RED, "文件不存在");
+        }
+        response
+    })
+    .inner
+}
+
 impl Configs {
     pub fn show(&mut self, ui: &mut Ui) {
         self.esrgan_config.show(ui);
-        file_select(
-            ui,
-            true,
-            ("sdcpp 路径", &mut self.sdcpp_path),
-            Default::default(),
-        );
-        model_file_select(ui, "模型", &mut self.model_path);
+        file_select(ui, "sdcpp 路径", &mut self.sdcpp_path);
+        self.model_path.select_model(ui, "模型");
         self.pages_config.show(ui);
     }
     fn get_add_args(&self) -> impl Iterator<Item = &dyn AddArgs> {
