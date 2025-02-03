@@ -38,7 +38,7 @@ impl AddArgs for SkipConfig {
 impl SkipConfig {
     pub fn show(&mut self, ui: &mut egui::Ui) {
         ui.collapsing("Skip 相关", |ui| {
-            slider_value(ui, ("clip-skip", &mut self.clip_skip), -1..=114)
+            slider_value(ui, "clip-skip", &mut self.clip_skip, -1..=114)
                 .on_hover_text("1 ignores none, 2 ignores one layer");
             ui.horizontal(|ui| {
                 ui.label("skip-layers");
@@ -46,14 +46,11 @@ impl SkipConfig {
             });
             slider_value(
                 ui,
-                ("skip-layer-start", &mut self.skip_layer_start),
+                "skip-layer-start",
+                &mut self.skip_layer_start,
                 0.01..=1.00,
             );
-            slider_value(
-                ui,
-                ("skip_layer_end", &mut self.skip_layer_end),
-                0.01..=1.00,
-            );
+            slider_value(ui, "skip_layer_end", &mut self.skip_layer_end, 0.01..=1.00);
         });
     }
 }

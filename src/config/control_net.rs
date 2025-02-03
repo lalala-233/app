@@ -42,7 +42,8 @@ impl ControlNetConfig {
             self.control_net_image.select_image(ui, "Control Net 图像");
             slider_value(
                 ui,
-                ("Control Net 强度", &mut self.control_strength),
+                "Control Net 强度",
+                &mut self.control_strength,
                 0.0..=1.0,
             ); // Please tell me whether the range is too small
 

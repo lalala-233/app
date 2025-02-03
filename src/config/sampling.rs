@@ -60,10 +60,10 @@ impl SamplingConfig {
                 ui.label("高度");
                 ui.add(DragValue::new(&mut self.height).range(64..=2048).speed(64));
             });
-            slider_value(ui, ("CFG Scale", &mut self.cfg_scale), 0.1..=30.0);
-            slider_value(ui, ("SLG Scale", &mut self.slg_scale), 0.0..=30.0)
+            slider_value(ui, "CFG Scale", &mut self.cfg_scale, 0.1..=30.0);
+            slider_value(ui, "SLG Scale", &mut self.slg_scale, 0.0..=30.0)
                 .on_hover_text("仅适用于 DiT 模型（默认值：0） ");
-            slider_value(ui, ("步数", &mut self.steps), 1..=150);
+            slider_value(ui, "步数", &mut self.steps, 1..=150);
         });
     }
 }

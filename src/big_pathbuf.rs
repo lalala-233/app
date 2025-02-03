@@ -1,6 +1,6 @@
 use eframe::egui::{ComboBox, Response, Ui};
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, path::PathBuf};
+use std::{borrow::Cow, path::PathBuf, str::FromStr};
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 
 pub struct BigPathBuf {
@@ -52,8 +52,23 @@ impl BigPathBuf {
     pub fn to_string_lossy(&self) -> Cow<'_, str> {
         self.current.to_string_lossy()
     }
-    pub fn select_fold(&mut self, ui: &mut Ui, label: &str) -> Response {
-        self.show(ui, label, Default::default())
+    pub fn input_folder(&mut self, ui: &mut Ui, label: &str) -> Response {
+        ui.horizontal(|ui| {
+            ui.label(label);
+            let path_str = &mut self.current.to_string_lossy();
+            let response = ui.text_edit_singleline(path_str);
+            let is_changed = response.changed();
+            if is_changed {
+                self.current = PathBuf::from_str(path_str).unwrap_or_default()
+            }
+            if ui.button("选择...").clicked() {
+                if let Some(path) = rfd::FileDialog::new().set_directory("./").pick_folder() {
+                    self.current = path;
+                }
+            }
+            response
+        })
+        .inner
     }
     pub fn select_model(&mut self, ui: &mut Ui, label: &str) -> Response {
         self.show(ui, label, Self::MODEL_EXTENSION)

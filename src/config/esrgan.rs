@@ -31,7 +31,7 @@ impl EsrganConfig {
             self.upscale_model_path
                 .select_model(ui, "ESRGAN 模型")
                 .on_hover_text("仅支持 RealESRGAN_x4plus_anime_6B");
-            slider_value(ui, ("超分辨率次数", &mut self.upscale_repeats), 1..=16);
+            slider_value(ui, "超分辨率次数", &mut self.upscale_repeats, 1..=16);
         });
     }
 }

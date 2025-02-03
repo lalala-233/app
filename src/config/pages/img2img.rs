@@ -30,7 +30,7 @@ impl Img2ImgPage {
         self.mask_img_path
             .select_image(ui, "Mask 图片")
             .on_hover_text("需要使用 Inpaint 模型");
-        slider_value(ui, ("guidance", &mut self.guidance), 0.0..=10.0);
-        slider_value(ui, ("强度", &mut self.strength), 0.0..=1.0);
+        slider_value(ui, "guidance", &mut self.guidance, 0.0..=10.0);
+        slider_value(ui, "强度", &mut self.strength, 0.0..=1.0);
     }
 }

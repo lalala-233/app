@@ -110,6 +110,20 @@ fn file_select(ui: &mut Ui, label_name: &str, pathbuf: &mut PathBuf) -> Response
 
 impl Configs {
     pub fn show(&mut self, ui: &mut Ui) {
+        self.prompts.show(ui);
+        self.clip_l_path.select_model(ui, "CLIP-l");
+        self.clip_g_path.select_model(ui, "CLIP-g");
+        self.t5xxl_path.select_model(ui, "t5xxl 模型");
+        self.vae_path.select_model(ui, "VAE 模型");
+        self.taesd_path.select_model(ui, "TAESD 模型");
+        self.embedding_dir.select_model(ui, "embedding 模型");
+        self.lora_model_dir.input_folder(ui, "LoRa 路径");
+        self.control_net_config.show(ui);
+        self.sampling_config.show(ui);
+        self.skip_config.show(ui);
+        self.photo_maker_config.show(ui);
+        self.output_path.input_folder(ui, "输出路径");
+
         self.esrgan_config.show(ui);
         file_select(ui, "sdcpp 路径", &mut self.sdcpp_path);
         self.model_path.select_model(ui, "模型");

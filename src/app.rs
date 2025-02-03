@@ -76,7 +76,8 @@ impl MyApp {
 
         is_generating.store(true, Relaxed);
         let mut command = self.config.command();
-        info!("Args: {:?}", command.get_args());
+        
+        info!("Args: {:?}", command);
 
         thread::spawn(move || {
             let mut child = match command

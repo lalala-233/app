@@ -26,8 +26,8 @@ impl PhotoMakerConfig {
         ui.collapsing("PhotoMaker 相关", |ui| {
             self.stacked_id_embedding_dir
                 .select_model(ui, "PhotoMaker 模型");
-            self.input_id_images_dir.select_fold(ui, "输入图片文件夹");
-            slider_value(ui, ("风格比例", &mut self.style_ratio), 0..=100);
+            self.input_id_images_dir.input_folder(ui, "输入图片文件夹");
+            slider_value(ui, "风格比例", &mut self.style_ratio, 0..=100);
             ui.checkbox(&mut self.normalize_input, "归一化输入");
         });
     }
